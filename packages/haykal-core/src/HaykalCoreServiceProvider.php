@@ -23,8 +23,9 @@ final class HaykalCoreServiceProvider extends ServiceProvider
     }
 
     /**
-     * Expose the Spatie permission team sync middleware under a short alias
-     * so apps can slot it into their middleware priority list.
+     * Register short route-middleware aliases for every middleware shipped
+     * by haykal-core so apps can slot them into their own middleware groups
+     * without depending on the full class path.
      */
     private function registerMiddlewareAlias(): void
     {
@@ -34,6 +35,11 @@ final class HaykalCoreServiceProvider extends ServiceProvider
         $router->aliasMiddleware(
             'haykal.permissions.team',
             Http\Middlewares\PermissionsTeamMiddleware::class,
+        );
+
+        $router->aliasMiddleware(
+            'haykal.user.locale',
+            Http\Middlewares\SetUserLocaleMiddleware::class,
         );
     }
 }

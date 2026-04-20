@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace HiTaqnia\Haykal\Core\Identity\Models;
 
+use HiTaqnia\Haykal\Core\Database\Factories\UserFactory;
 use HiTaqnia\Haykal\Core\Identity\Casts\PhoneNumberCast;
 use HiTaqnia\Haykal\Core\Identity\QueryBuilders\UserQueryBuilder;
 use Huwiya\InteractsWithHuwiya;
 use Huwiya\TokenClaims;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -63,6 +65,11 @@ class User extends Authenticatable implements HasMedia
     public function newEloquentBuilder($query): UserQueryBuilder
     {
         return new UserQueryBuilder($query);
+    }
+
+    protected static function newFactory(): Factory
+    {
+        return UserFactory::new();
     }
 
     // -------------------------------------------------------------
