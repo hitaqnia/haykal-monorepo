@@ -14,13 +14,16 @@ final class UserHuwiyaTest extends CoreTestCase
 {
     use RefreshDatabase;
 
-    public function test_find_or_create_from_huwiya_creates_a_new_user_with_claim_data(): void
+    public function test_find_or_create_from_huwiya_creates_a_new_user_with_all_claim_fields(): void
     {
         $claims = $this->claims([
             'id' => '01HX0000000000000000000042',
             'name' => 'Ali Al-Saadi',
             'phone' => '+9647701234567',
             'email' => 'ali@example.test',
+            'locale' => 'ar',
+            'zoneinfo' => 'Asia/Baghdad',
+            'theme' => 'dark',
         ]);
 
         $user = User::findOrCreateFromHuwiya($claims);
@@ -29,6 +32,9 @@ final class UserHuwiyaTest extends CoreTestCase
         $this->assertSame('01HX0000000000000000000042', $user->huwiya_id);
         $this->assertSame('Ali Al-Saadi', $user->name);
         $this->assertSame('ali@example.test', $user->email);
+        $this->assertSame('ar', $user->locale);
+        $this->assertSame('Asia/Baghdad', $user->zoneinfo);
+        $this->assertSame('dark', $user->theme);
     }
 
     public function test_find_or_create_from_huwiya_returns_the_same_user_on_subsequent_logins(): void
@@ -42,12 +48,15 @@ final class UserHuwiyaTest extends CoreTestCase
         $this->assertSame(1, User::count());
     }
 
-    public function test_update_attributes_from_claims_overwrite_stored_profile(): void
+    public function test_update_attributes_from_claims_overwrite_all_synced_fields_on_relogin(): void
     {
         $initial = $this->claims([
             'id' => '01HX0000000000000000000042',
             'name' => 'Old Name',
             'phone' => '+9647701234567',
+            'locale' => 'en',
+            'zoneinfo' => 'UTC',
+            'theme' => 'light',
         ]);
 
         User::findOrCreateFromHuwiya($initial);
@@ -56,11 +65,17 @@ final class UserHuwiyaTest extends CoreTestCase
             'id' => '01HX0000000000000000000042',
             'name' => 'New Name',
             'phone' => '+9647701234567',
+            'locale' => 'ar',
+            'zoneinfo' => 'Asia/Baghdad',
+            'theme' => 'dark',
         ]);
 
-        $user = User::findOrCreateFromHuwiya($updated);
+        $fresh = User::findOrCreateFromHuwiya($updated)->fresh();
 
-        $this->assertSame('New Name', $user->fresh()->name);
+        $this->assertSame('New Name', $fresh->name);
+        $this->assertSame('ar', $fresh->locale);
+        $this->assertSame('Asia/Baghdad', $fresh->zoneinfo);
+        $this->assertSame('dark', $fresh->theme);
     }
 
     public function test_user_can_be_assigned_a_spatie_role_scoped_to_a_tenant(): void

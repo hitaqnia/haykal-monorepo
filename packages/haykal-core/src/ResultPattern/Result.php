@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace HiTaqnia\Haykal\Core\Result;
+namespace HiTaqnia\Haykal\Core\ResultPattern;
 
 use InvalidArgumentException;
 

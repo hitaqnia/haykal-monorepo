@@ -20,6 +20,11 @@ return new class extends Migration
             $table->string('phone')->nullable()->unique();
             $table->string('email')->nullable()->unique();
 
+            // Preferences synced from Huwiya claims on every login.
+            $table->string('locale')->default('');
+            $table->string('zoneinfo')->default('');
+            $table->string('theme')->default('');
+
             $table->rememberToken();
             $table->timestamps();
             $table->softDeletes();

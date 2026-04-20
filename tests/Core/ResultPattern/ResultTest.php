@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace HiTaqnia\Haykal\Tests\Core\Result;
+namespace HiTaqnia\Haykal\Tests\Core\ResultPattern;
 
-use HiTaqnia\Haykal\Core\Result\Error;
-use HiTaqnia\Haykal\Core\Result\Result;
+use HiTaqnia\Haykal\Core\ResultPattern\Error;
+use HiTaqnia\Haykal\Core\ResultPattern\Result;
 use PHPUnit\Framework\TestCase;
 
 final class ResultTest extends TestCase
