@@ -2,7 +2,14 @@
 
 API scaffolding for HiTaqnia Laravel applications.
 
-`haykal-api` provides the response envelope, the exception handler, the Scramble integrations that describe both in the generated OpenAPI document, and the `GET /api/identity/me` endpoint for retrieving the authenticated Huwiya user. Controllers, Form Requests, and Resources are written per-project following the conventions documented below — Laravel already supplies the right primitives; this package only ships what is genuinely shared.
+`haykal-api` provides four things:
+
+1. **A response envelope** — the `ApiResponse` factory and `ApiExceptionHandler` so every endpoint in the application returns a consistent JSON shape.
+2. **Scramble integrations** — exception-to-response extensions that document the envelope in the generated OpenAPI spec.
+3. **A provider-based API composition pattern** — an abstract `ApiProvider` that subclasses per API module to register it with Scramble, declare its security schemes, and expose its docs UI. Applications compose as many APIs as they need by defining one provider per module.
+4. **The Identity API** — `GET /api/identity/me` for retrieving the authenticated Huwiya user, along with a ready-to-register `IdentityApiProvider`.
+
+Controllers, Form Requests, and Resources are written per-project following the conventions documented below; Laravel already supplies the right primitives and `haykal-api` deliberately does not ship base classes for them.
 
 ---
 
@@ -12,6 +19,7 @@ API scaffolding for HiTaqnia Laravel applications.
 - [What this package provides](#what-this-package-provides)
 - [Installation](#installation)
 - [Configuration](#configuration)
+- [Defining APIs](#defining-apis)
 - [Usage](#usage)
 - [Conventions](#conventions)
 - [Customization](#customization)
@@ -47,6 +55,13 @@ API scaffolding for HiTaqnia Laravel applications.
 | `HiTaqnia\Haykal\Api\Scramble\NotFoundExceptionExtension` | Documents 404 responses for both Eloquent and route-level not-found exceptions. |
 | `HiTaqnia\Haykal\Api\Scramble\HuwiyaSecurityExtension` | Document transformer that adds the Huwiya JWT bearer scheme to the OpenAPI spec. |
 | `HiTaqnia\Haykal\Api\Scramble\EnvelopeResponseSchema` | Helper builder used by both exception extensions so the envelope shape stays consistent. |
+
+### API composition
+
+| Class | Purpose |
+|---|---|
+| `HiTaqnia\Haykal\Api\ApiProvider` | Abstract base service provider for API modules. Registers the module with Scramble, installs the Huwiya bearer security scheme, and exposes the docs UI. |
+| `HiTaqnia\Haykal\Api\Identity\IdentityApiProvider` | Concrete provider for the Identity API shipped by this package. Applications register it to enable the `GET /api/identity/me` endpoint and its Scramble docs. |
 
 ### Identity
 
@@ -87,7 +102,26 @@ This copies `routes/api/identity-api.php` into the application. Include it from 
 require __DIR__.'/api/identity-api.php';
 ```
 
-### 2. Register the `huwiya-api` guard
+### 2. Register the Identity API provider
+
+Register `IdentityApiProvider` in `bootstrap/providers.php`:
+
+```php
+return [
+    App\Providers\AppServiceProvider::class,
+
+    // Haykal API modules
+    HiTaqnia\Haykal\Api\Identity\IdentityApiProvider::class,
+
+    // ... other application providers and API providers ...
+];
+```
+
+This registers the Identity API with Scramble, installs the Huwiya bearer security scheme, and exposes the docs UI at `/docs/identity-api` with the JSON spec at `/docs/identity-api.json`.
+
+See [Defining APIs](#defining-apis) below for the full pattern used to add additional API modules.
+
+### 3. Register the `huwiya-api` guard
 
 In `config/auth.php`:
 
@@ -102,7 +136,7 @@ In `config/auth.php`:
 ],
 ```
 
-### 3. Wire the exception handler
+### 4. Wire the exception handler
 
 In `bootstrap/app.php`:
 
@@ -118,7 +152,7 @@ use HiTaqnia\Haykal\Api\Response\ApiExceptionHandler;
 
 `ApiExceptionHandler` only intervenes for requests matching `api/*`; other requests fall through to Laravel's defaults.
 
-### 4. Confirm Scramble is configured
+### 5. Confirm Scramble is configured
 
 Publish Scramble's configuration if you have not already:
 
@@ -126,7 +160,139 @@ Publish Scramble's configuration if you have not already:
 php artisan vendor:publish --provider="Dedoc\Scramble\ScrambleServiceProvider" --tag=scramble-config
 ```
 
-No further action is required — `HaykalApiServiceProvider` registers the validation and 404 exception extensions automatically and adds the Huwiya bearer scheme to every generated OpenAPI document.
+No further action is required — `HaykalApiServiceProvider` registers the validation and 404 exception extensions automatically. Security schemes and per-API metadata are declared by each `ApiProvider` subclass (see [Defining APIs](#defining-apis)).
+
+---
+
+## Defining APIs
+
+Every API module in a Haykal application is declared by a subclass of `HiTaqnia\Haykal\Api\ApiProvider`. The provider owns the module's Scramble registration, security schemes, and docs UI — applications compose as many providers as they need, one per API module.
+
+### Anatomy of an API provider
+
+Subclass `ApiProvider` and declare the four required identity hooks. Everything else is optional.
+
+```php
+namespace App\Providers\Apis;
+
+use Dedoc\Scramble\Support\Generator\SecurityScheme;
+use HiTaqnia\Haykal\Api\ApiProvider;
+
+final class PropertiesApiProvider extends ApiProvider
+{
+    protected function name(): string
+    {
+        return 'properties-api';
+    }
+
+    protected function path(): string
+    {
+        return 'api/properties';
+    }
+
+    protected function title(): string
+    {
+        return 'Properties API';
+    }
+
+    protected function description(): string
+    {
+        return 'Property management endpoints for the admin dashboard.';
+    }
+
+    // Optional hooks below.
+
+    protected function version(): string
+    {
+        return '1.2.0';
+    }
+
+    protected function logo(): ?string
+    {
+        return asset('logo.png');
+    }
+
+    protected function primaryColor(): ?string
+    {
+        return '#4432d2';
+    }
+
+    /**
+     * Security schemes to register in addition to the Huwiya bearer scheme
+     * (which is always installed). Typical additions are header-based
+     * tenant or profile selectors.
+     *
+     * @return array<string, SecurityScheme>
+     */
+    protected function additionalSecuritySchemes(): array
+    {
+        return [
+            'complex' => SecurityScheme::apiKey('header', 'X-Complex-Id'),
+        ];
+    }
+}
+```
+
+Register the provider in `bootstrap/providers.php`:
+
+```php
+return [
+    App\Providers\AppServiceProvider::class,
+
+    HiTaqnia\Haykal\Api\Identity\IdentityApiProvider::class,
+    App\Providers\Apis\PropertiesApiProvider::class,
+];
+```
+
+### What the provider wires up
+
+Registering the provider gives the application, automatically:
+
+| Behavior | Derived from |
+|---|---|
+| Scramble discovers every route matching `api_path` and groups them under the module's OpenAPI spec. | `path()` |
+| The spec's `info.version` and `info.description` are populated. | `version()`, `description()` |
+| The Scramble docs UI is served at `docs/<name>` (default) with the JSON spec at `docs/<name>.json`. | `docsPath()` — override to move it. |
+| The docs UI is titled and optionally branded with a logo and primary color. | `title()`, `logo()`, `primaryColor()` |
+| The `bearer` security scheme for Huwiya JWTs is added to the spec as the default requirement for every operation. | Always applied. |
+| Any additional schemes declared by the provider are merged into the spec. | `additionalSecuritySchemes()` |
+
+### Route files
+
+Route files remain conventional Laravel — the provider does not manage routing. Create `routes/api/properties-api.php` and include it from `routes/api.php`:
+
+```php
+// routes/api.php
+require __DIR__.'/api/properties-api.php';
+```
+
+```php
+// routes/api/properties-api.php
+use App\Apis\Properties\Controllers\CreatePropertyController;
+use App\Apis\Properties\Controllers\ListPropertiesController;
+use Illuminate\Support\Facades\Route;
+
+Route::prefix('properties')
+    ->middleware(['auth:huwiya-api'])
+    ->group(function () {
+        Route::get('/', ListPropertiesController::class);
+        Route::post('/', CreatePropertyController::class);
+    });
+```
+
+Scramble matches the `api_path` declared on the provider (`api/properties`) against the routes defined here and groups them under the `properties-api` spec.
+
+### The shipped Identity API
+
+`IdentityApiProvider` is a concrete `ApiProvider` shipped by this package. It exposes the Identity module at:
+
+| Path | Purpose |
+|---|---|
+| `api/identity/me` | Authenticated user profile. |
+| `docs/identity-api` | Scramble UI for the Identity module. |
+| `docs/identity-api.json` | Raw OpenAPI spec. |
+
+Subclass `IdentityApiProvider` (or write a new one extending `ApiProvider` directly) if the module needs a different URL prefix, title, or security scheme set.
 
 ---
 

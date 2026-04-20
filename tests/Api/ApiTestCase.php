@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace HiTaqnia\Haykal\Tests\Api;
 
+use Dedoc\Scramble\ScrambleServiceProvider;
 use HiTaqnia\Haykal\Api\HaykalApiServiceProvider;
 use HiTaqnia\Haykal\Core\HaykalCoreServiceProvider;
 use HiTaqnia\Haykal\Core\Identity\Models\Permission;
@@ -28,6 +29,7 @@ abstract class ApiTestCase extends TestCase
             HuwiyaServiceProvider::class,
             PermissionServiceProvider::class,
             MediaLibraryServiceProvider::class,
+            ScrambleServiceProvider::class,
             HaykalCoreServiceProvider::class,
             HaykalApiServiceProvider::class,
         ];
