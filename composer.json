@@ -8,9 +8,7 @@
         "hitaqnia/haykal-core": "@dev",
         "hitaqnia/haykal-api": "@dev",
         "hitaqnia/haykal-filament": "@dev",
-        "hitaqnia/haykal": "@dev",
-        "hitaqnia/filament-mapbox": "@dev",
-        "hitaqnia/filament-viewerjs": "@dev"
+        "hitaqnia/haykal": "@dev"
     },
     "require-dev": {
         "laravel/pint": "^1.23",
@@ -41,16 +39,6 @@
         {
             "type": "path",
             "url": "packages/haykal",
-            "options": { "symlink": true }
-        },
-        {
-            "type": "path",
-            "url": "packages/filament-mapbox",
-            "options": { "symlink": true }
-        },
-        {
-            "type": "path",
-            "url": "packages/filament-viewerjs",
             "options": { "symlink": true }
         }
     ],

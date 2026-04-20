@@ -14,19 +14,17 @@ haykal/
 │   ├── haykal-core/       hitaqnia/haykal-core — shared kernel (Result, tenancy, Identity, middlewares).
 │   ├── haykal-api/        hitaqnia/haykal-api — API response layer, Scramble extensions, /me endpoint.
 │   ├── haykal-filament/   hitaqnia/haykal-filament — Filament foundation (BasePanel, BaseResource, base theme).
-│   ├── haykal/            hitaqnia/haykal — metapackage (api + filament).
-│   ├── filament-mapbox/   hitaqnia/filament-mapbox — standalone Filament plugin.
-│   └── filament-viewerjs/ hitaqnia/filament-viewerjs — standalone Filament plugin.
+│   └── haykal/            hitaqnia/haykal — metapackage (api + filament).
 ├── boilerplate/           New project template (Stage 5).
 ├── smoke/                 Throwaway Laravel app used to validate installs end-to-end (Stage 4).
 └── tests/
     ├── Core/              haykal-core tests.
     ├── Api/               haykal-api tests.
     ├── Filament/          haykal-filament tests.
-    ├── FilamentMapbox/    filament-mapbox tests.
-    ├── FilamentViewerJs/  filament-viewerjs tests.
     └── Fixtures/          Shared fixtures (FakeHuwiyaIdP, etc.).
 ```
+
+Standalone Filament plugins (Mapbox, ViewerJS) live outside this monorepo in `/Users/mahdi/Work/filament-plugins/` — each with its own git repo and release cadence. They are not part of Haykal.
 
 ## Dependencies between packages
 
@@ -34,7 +32,7 @@ haykal/
 - `haykal-api` depends on `haykal-core`.
 - `haykal-filament` depends on `haykal-core`.
 - `haykal` (metapackage) depends on `haykal-api` + `haykal-filament`.
-- `filament-mapbox` and `filament-viewerjs` are **independent** — they do not depend on haykal-core or haykal-filament.
+- The `filament-mapbox` and `filament-viewerjs` plugins live in their own repos outside this monorepo.
 
 `haykal-core` hard-requires the common ecosystem packages (Spatie permission / medialibrary / translatable / data, Huwiya SDK, Horizon, FCM, flysystem-s3, predis, geophp) so consuming apps get the full hitaqnia stack with a single `composer require`.
 
@@ -62,7 +60,8 @@ Implementation proceeds in six stages:
 4. **Stage 3** — `haykal-filament`.
 5. **Stage 4** — `haykal` metapackage + local validation.
 6. **Stage 5** — `boilerplate/` new project template.
-7. **Stage 6** — `filament-mapbox` + `filament-viewerjs`.
+
+The standalone Filament plugins (`filament-mapbox`, `filament-viewerjs`) are tracked separately in `/Users/mahdi/Work/filament-plugins/` and have their own roadmap.
 
 See `/Users/mahdi/.claude/plans/in-the-current-directory-wild-rain.md` for the full plan.
 
