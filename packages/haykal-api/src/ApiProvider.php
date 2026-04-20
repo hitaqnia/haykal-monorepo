@@ -9,6 +9,7 @@ use Dedoc\Scramble\Support\Generator\OpenApi;
 use Dedoc\Scramble\Support\Generator\SecurityRequirement;
 use Dedoc\Scramble\Support\Generator\SecurityScheme;
 use Illuminate\Support\ServiceProvider;
+use LogicException;
 
 /**
  * Base class for every API module in a Haykal application.
@@ -17,18 +18,18 @@ use Illuminate\Support\ServiceProvider;
  * management, residents, …). Each lives under its own URL prefix, has
  * its own Scramble-generated OpenAPI document, and its own docs UI.
  *
- * Subclass this provider for every new API module, declare the four
- * required identity hooks — `name`, `path`, `title`, `description` —
- * and optionally override the presentation hooks (`version`, `logo`,
- * `primaryColor`, `docsPath`) or contribute extra security schemes
- * via `additionalSecuritySchemes()`.
+ * Subclass this provider for every new API module, declare the three
+ * identity hooks — `name`, `title`, `description` — and either a single
+ * `path()` or a multi-entry `versions()` map. Optional hooks cover
+ * branding (`logo`, `primaryColor`), documentation paths (`docsPath`),
+ * the OpenAPI `info.version` string (`version`), and any module-specific
+ * security schemes (`additionalSecuritySchemes`).
  *
- * Registration handles:
- *   1. `Scramble::registerApi()` with the module's identity.
- *   2. A document transformer that installs the Huwiya bearer scheme
- *      as the default security requirement and appends any
- *      module-specific schemes (e.g., tenant or profile headers).
- *   3. The UI route (`docs/<name>`) and JSON spec route.
+ * For each declared version the provider:
+ *   1. Registers the API with Scramble under a derived identifier.
+ *   2. Installs the Huwiya bearer security scheme as the default
+ *      requirement and appends any extra schemes.
+ *   3. Exposes the docs UI and raw JSON spec routes.
  *
  * Route files are intentionally not managed here — they live under
  * `routes/api/<module>-api.php` in the application and are included
@@ -37,17 +38,19 @@ use Illuminate\Support\ServiceProvider;
 abstract class ApiProvider extends ServiceProvider
 {
     /**
-     * The Scramble API identifier. Drives the registration key, the UI
-     * route, and the JSON spec route. Should be kebab-case and unique
-     * across the application (e.g., `identity-api`, `residents-api`).
+     * Sentinel value used as the key of the single, unversioned entry
+     * in the versions map. Keyed entries other than this sentinel
+     * produce versioned Scramble APIs (e.g., `{name}-v1`).
      */
-    abstract protected function name(): string;
+    public const DEFAULT_VERSION = 'default';
 
     /**
-     * URL prefix for the API (e.g., `api/identity`). Scramble uses this
-     * to discover which routes belong to the module.
+     * The base Scramble API identifier. For unversioned APIs this is
+     * the identifier Scramble uses directly. For versioned APIs the
+     * version key is appended (e.g., `identity-api-v1`). Should be
+     * kebab-case and unique within the application.
      */
-    abstract protected function path(): string;
+    abstract protected function name(): string;
 
     /**
      * Human-readable title shown in the Scramble UI and the OpenAPI spec.
@@ -60,9 +63,48 @@ abstract class ApiProvider extends ServiceProvider
     abstract protected function description(): string;
 
     /**
-     * API version string shown in the OpenAPI spec. Override when bumping.
+     * URL prefix for the default (single-version) API.
+     *
+     * Providers that expose only one version override this; the default
+     * `versions()` implementation forwards it as `['default' => path()]`.
+     * Providers that override `versions()` directly do not need to
+     * implement `path()`.
      */
-    protected function version(): string
+    protected function path(): ?string
+    {
+        return null;
+    }
+
+    /**
+     * Versions of this API to register.
+     *
+     * Returns a map keyed by version identifier, with each value the URL
+     * prefix where that version lives. Use `ApiProvider::DEFAULT_VERSION`
+     * (the string `'default'`) as the key for a single unversioned API.
+     *
+     * @return array<string, string>
+     */
+    protected function versions(): array
+    {
+        $path = $this->path();
+
+        if ($path === null) {
+            throw new LogicException(sprintf(
+                '%s must override either path() or versions() to declare URL paths.',
+                static::class,
+            ));
+        }
+
+        return [self::DEFAULT_VERSION => $path];
+    }
+
+    /**
+     * OpenAPI `info.version` string for the given version identifier.
+     *
+     * Defaults to `1.0.0` for every version. Override and branch on
+     * `$versionId` to publish distinct spec versions per API version.
+     */
+    protected function version(string $versionId = self::DEFAULT_VERSION): string
     {
         return '1.0.0';
     }
@@ -84,12 +126,14 @@ abstract class ApiProvider extends ServiceProvider
     }
 
     /**
-     * URL path for the docs UI. Defaults to `docs/<name>`. The JSON spec
-     * is served at `<docsPath>.json`.
+     * URL path for the docs UI of the given version.
+     *
+     * Defaults to `docs/{apiId}` where `apiId` is the suffixed name.
+     * The JSON spec is always served at `<docsPath>.json`.
      */
-    protected function docsPath(): string
+    protected function docsPath(string $versionId = self::DEFAULT_VERSION): string
     {
-        return 'docs/'.$this->name();
+        return 'docs/'.$this->apiIdFor($versionId);
     }
 
     /**
@@ -113,10 +157,19 @@ abstract class ApiProvider extends ServiceProvider
 
     final public function boot(): void
     {
-        Scramble::registerApi($this->name(), [
-            'api_path' => $this->path(),
+        foreach ($this->versions() as $versionId => $path) {
+            $this->registerVersion((string) $versionId, $path);
+        }
+    }
+
+    private function registerVersion(string $versionId, string $path): void
+    {
+        $apiId = $this->apiIdFor($versionId);
+
+        Scramble::registerApi($apiId, [
+            'api_path' => $path,
             'info' => [
-                'version' => $this->version(),
+                'version' => $this->version($versionId),
                 'description' => $this->description(),
             ],
             'ui' => $this->buildUiConfig(),
@@ -134,8 +187,20 @@ abstract class ApiProvider extends ServiceProvider
             $openApi->security[] = new SecurityRequirement(['bearer' => []]);
         });
 
-        Scramble::registerUiRoute(path: $this->docsPath(), api: $this->name());
-        Scramble::registerJsonSpecificationRoute(path: $this->docsPath().'.json', api: $this->name());
+        $docsPath = $this->docsPath($versionId);
+
+        Scramble::registerUiRoute(path: $docsPath, api: $apiId);
+        Scramble::registerJsonSpecificationRoute(path: $docsPath.'.json', api: $apiId);
+    }
+
+    /**
+     * Compose the Scramble API identifier for a given version.
+     */
+    private function apiIdFor(string $versionId): string
+    {
+        return $versionId === self::DEFAULT_VERSION
+            ? $this->name()
+            : $this->name().'-'.$versionId;
     }
 
     /**

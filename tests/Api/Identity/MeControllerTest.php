@@ -6,7 +6,6 @@ namespace HiTaqnia\Haykal\Tests\Api\Identity;
 
 use HiTaqnia\Haykal\Core\Identity\Models\User;
 use HiTaqnia\Haykal\Tests\Api\ApiTestCase;
-use Huwiya\Facades\Huwiya;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 final class MeControllerTest extends ApiTestCase
@@ -17,7 +16,7 @@ final class MeControllerTest extends ApiTestCase
     {
         $response = $this->getJson('/api/identity/me');
 
-        $response->assertStatus(401);
+        $this->assertApiError($response, code: 401);
     }
 
     public function test_authenticated_request_returns_the_huwiya_user_profile_in_the_envelope(): void
@@ -31,13 +30,11 @@ final class MeControllerTest extends ApiTestCase
             'theme' => 'dark',
         ]);
 
-        Huwiya::actingAs($user, 'huwiya-api');
+        $this->authenticateAs($user);
 
         $response = $this->getJson('/api/identity/me');
 
-        $response->assertOk();
-        $response->assertJsonPath('success', 1);
-        $response->assertJsonPath('code', 200);
+        $this->assertApiSuccess($response);
         $response->assertJsonPath('message', 'Profile retrieved successfully.');
         $response->assertJsonPath('data.id', $user->getKey());
         $response->assertJsonPath('data.name', 'Ali Al-Saadi');
@@ -46,6 +43,5 @@ final class MeControllerTest extends ApiTestCase
         $response->assertJsonPath('data.locale', 'ar');
         $response->assertJsonPath('data.zoneinfo', 'Asia/Baghdad');
         $response->assertJsonPath('data.theme', 'dark');
-        $response->assertJsonPath('errors', null);
     }
 }
