@@ -5,11 +5,30 @@
     "license": "proprietary",
     "version": "1.0.0-dev",
     "require": {
-        "php": "^8.3"
+        "php": "^8.3",
+        "hitaqnia/huwiya-laravel": "@dev",
+        "illuminate/contracts": "^13.0",
+        "illuminate/database": "^13.0",
+        "illuminate/support": "^13.0",
+        "laravel-notification-channels/fcm": "^6.0",
+        "laravel/horizon": "^5.43",
+        "league/flysystem-aws-s3-v3": "^3.29",
+        "predis/predis": "^3.0",
+        "spatie/laravel-data": "^4.17",
+        "spatie/laravel-medialibrary": "^11.15",
+        "spatie/laravel-permission": "^6.21",
+        "spatie/laravel-translatable": "^6.11"
     },
     "autoload": {
         "psr-4": {
             "HiTaqnia\\Haykal\\Core\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "HiTaqnia\\Haykal\\Core\\HaykalCoreServiceProvider"
+            ]
         }
     },
     "minimum-stability": "dev",

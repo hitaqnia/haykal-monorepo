@@ -23,6 +23,11 @@
     "repositories": [
         {
             "type": "path",
+            "url": "../huwiya/packages/huwiya-laravel",
+            "options": { "symlink": true }
+        },
+        {
+            "type": "path",
             "url": "packages/haykal-core",
             "options": { "symlink": true }
         },
