@@ -1,0 +1,18 @@
+{
+    "name": "hitaqnia/haykal-filament",
+    "description": "Haykal Filament foundation: BasePanel, BaseResource, base pages, Huwiya login, base theme.",
+    "type": "library",
+    "license": "proprietary",
+    "version": "1.0.0-dev",
+    "require": {
+        "php": "^8.3",
+        "hitaqnia/haykal-core": "@dev"
+    },
+    "autoload": {
+        "psr-4": {
+            "Hitaqnia\\Haykal\\Filament\\": "src/"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

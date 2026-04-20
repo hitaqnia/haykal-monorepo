@@ -1,0 +1,17 @@
+{
+    "name": "hitaqnia/haykal-core",
+    "description": "Haykal shared kernel: Result pattern, tenancy, domain concerns, Identity domain (User + Huwiya integration).",
+    "type": "library",
+    "license": "proprietary",
+    "version": "1.0.0-dev",
+    "require": {
+        "php": "^8.3"
+    },
+    "autoload": {
+        "psr-4": {
+            "Hitaqnia\\Haykal\\Core\\": "src/"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
