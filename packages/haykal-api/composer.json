@@ -10,7 +10,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Hitaqnia\\Haykal\\Api\\": "src/"
+            "HiTaqnia\\Haykal\\Api\\": "src/"
         }
     },
     "minimum-stability": "dev",

@@ -1,8 +1,8 @@
 # Haykal
 
-Hitaqnia's internal Laravel boilerplate package suite.
+HiTaqnia's internal Laravel boilerplate package suite.
 
-Haykal consolidates the shared layer that every Hitaqnia Laravel project uses — API response scaffolding, Filament base classes, Identity integration with the Huwiya IdP, tenancy utilities, domain concerns — into a maintained, versioned set of Composer packages under the `hitaqnia/` vendor namespace.
+Haykal consolidates the shared layer that every HiTaqnia Laravel project uses — API response scaffolding, Filament base classes, Identity integration with the Huwiya IdP, tenancy utilities, domain concerns — into a maintained, versioned set of Composer packages under the `hitaqnia/` vendor namespace.
 
 ## Layout
 

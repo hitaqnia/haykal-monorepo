@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Hitaqnia\Haykal\Tests\Fixtures;
+namespace HiTaqnia\Haykal\Tests\Fixtures;
 
 use PHPUnit\Framework\TestCase;
 

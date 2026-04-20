@@ -1,6 +1,6 @@
 {
     "name": "hitaqnia/haykal-monorepo",
-    "description": "Hitaqnia Laravel boilerplate package suite (monorepo).",
+    "description": "HiTaqnia Laravel boilerplate package suite (monorepo).",
     "type": "project",
     "license": "proprietary",
     "require": {
@@ -17,7 +17,7 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Hitaqnia\\Haykal\\Tests\\": "tests/"
+            "HiTaqnia\\Haykal\\Tests\\": "tests/"
         }
     },
     "repositories": [

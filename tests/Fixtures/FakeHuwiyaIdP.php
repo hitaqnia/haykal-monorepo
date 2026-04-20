@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Hitaqnia\Haykal\Tests\Fixtures;
+namespace HiTaqnia\Haykal\Tests\Fixtures;
 
 use Illuminate\Support\Facades\Http;
 use RuntimeException;

@@ -10,7 +10,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Hitaqnia\\Haykal\\Filament\\": "src/"
+            "HiTaqnia\\Haykal\\Filament\\": "src/"
         }
     },
     "minimum-stability": "dev",
