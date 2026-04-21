@@ -252,7 +252,41 @@ class Unit extends Model
 }
 ```
 
-The trait applies `TenantScope` as a global scope, fills `tenant_id` automatically on creation when a tenant is active, and exposes a `tenant()` relation targeting the class named in `$tenantModel`. Rows whose `tenant_id` is `NULL` remain visible across all tenants.
+The trait applies `TenantScope` as a global scope, fills the tenant foreign key automatically on creation when a tenant is active, and exposes a `tenant()` relation targeting the class named in `$tenantModel`. Rows whose tenant FK is `NULL` remain visible across all tenants.
+
+#### Multiple tenant types
+
+Applications that expose several tenant types (for example, **Agency** and **Development Company**, each with its own table, relations, and foreign key column) extend `Tenant` once per type. Only one tenant type is active per panel or request — Haykal does not maintain a keyed map of active tenants — so every component treats "the active tenant" as a single value.
+
+Each tenanted model declares both its concrete tenant class and its foreign key column:
+
+```php
+use HiTaqnia\Haykal\Core\Tenancy\Concerns\HasTenant;
+use HiTaqnia\Haykal\Core\Tenancy\Models\Tenant;
+
+class Agency extends Tenant {}
+class DevelopmentCompany extends Tenant {}
+
+class Property extends Model
+{
+    use HasTenant;
+
+    protected string $tenantModel = Agency::class;
+    protected string $tenantForeignKey = 'agency_id';
+}
+
+class Project extends Model
+{
+    use HasTenant;
+
+    protected string $tenantModel = DevelopmentCompany::class;
+    protected string $tenantForeignKey = 'developer_id';
+}
+```
+
+The scope reads `$tenantForeignKey` per model, so queries for `Property` filter on `agency_id` and queries for `Project` filter on `developer_id`, each against the single active tenant id set by the request's middleware. Models that omit the property fall back to the package-wide default (`tenant_id`).
+
+The Filament counterpart of this pattern is one panel per tenant type — see `haykal-filament`'s README for how each panel wires its own tenant model.
 
 ### Huwiya claim synchronization
 
@@ -325,7 +359,9 @@ Apps may substitute any of the shipped Eloquent models with a subclass:
 | Method / property | Purpose |
 |---|---|
 | `protected string $tenantModel` | The concrete Tenant class the model belongs to. |
+| `protected string $tenantForeignKey` | The foreign key column on this model. Defaults to `tenant_id`; override per-model in multi-tenant-type apps (for example `agency_id`, `developer_id`). |
 | `tenantRelationModel(): string` | Overridable for dynamic resolution (for example, reading from configuration). |
+| `getTenantForeignKey(): string` | Overridable for dynamic FK resolution. Default reads the `$tenantForeignKey` property. |
 
 ### Override points on `CustomPathGenerator`
 
@@ -352,7 +388,7 @@ The values below are hardcoded and not exposed through configuration. They can b
 
 | Convention | Current value | Location |
 |---|---|---|
-| Tenant foreign key column | `tenant_id` | `TenantScope::FOREIGN_KEY` |
+| Default tenant foreign key column | `tenant_id` | `TenantScope::FOREIGN_KEY` (per-model overridable via `HasTenant`'s `$tenantForeignKey`) |
 | Phone number country scope | Iraq (E.164 `+964…`) | `PhoneNumber::INPUT_REGEX` |
 
 ---

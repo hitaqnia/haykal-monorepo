@@ -16,18 +16,28 @@ use RuntimeException;
  * Using this trait causes Haykal to:
  *   1. Apply {@see TenantScope} as a global scope — queries are
  *      automatically filtered to the active tenant (rows with a NULL
- *      `tenant_id` remain visible as shared records).
- *   2. Populate the `tenant_id` column from `Tenancy::getTenantId()` on
- *      `creating` when the model does not set it explicitly and a
- *      tenant is active.
- *   3. Expose a `tenant()` BelongsTo relation. Because the concrete
- *      Tenant model varies per application, each using model must
- *      declare the target class via a `$tenantModel` property:
+ *      tenant foreign key remain visible as shared records).
+ *   2. Populate the tenant foreign key column from
+ *      `Tenancy::getTenantId()` on `creating` when the model does not
+ *      set it explicitly and a tenant is active.
+ *   3. Expose a `tenant()` BelongsTo relation.
  *
- *          protected string $tenantModel = Complex::class;
+ * Each using model declares:
  *
- *      Models that need dynamic resolution may override
- *      `tenantRelationModel()` instead.
+ *     protected string $tenantModel = Agency::class;
+ *     protected string $tenantForeignKey = 'agency_id';   // optional
+ *
+ * `$tenantForeignKey` defaults to {@see TenantScope::FOREIGN_KEY}
+ * (`tenant_id`) for applications where every tenanted table shares one
+ * column name. Applications with multiple tenant types (for example,
+ * Agency and DevelopmentCompany) override it per-model to match the
+ * actual FK column — `agency_id` on `properties`, `developer_id` on
+ * `projects`. Only one tenant type is active per panel/request; the
+ * scope always reads the current active id from `Tenancy` and applies
+ * it to whichever column the model declares.
+ *
+ * Models that need dynamic resolution may override
+ * `tenantRelationModel()` and/or `getTenantForeignKey()`.
  */
 trait HasTenant
 {
@@ -36,7 +46,7 @@ trait HasTenant
         static::addGlobalScope(new TenantScope);
 
         static::creating(function (Model $model): void {
-            $column = TenantScope::FOREIGN_KEY;
+            $column = $model->getTenantForeignKey();
             $tenantId = Tenancy::getTenantId();
 
             if ($tenantId !== null && empty($model->getAttribute($column))) {
@@ -47,7 +57,7 @@ trait HasTenant
 
     public function tenant(): BelongsTo
     {
-        return $this->belongsTo($this->tenantRelationModel(), TenantScope::FOREIGN_KEY);
+        return $this->belongsTo($this->tenantRelationModel(), $this->getTenantForeignKey());
     }
 
     /**
@@ -70,5 +80,20 @@ trait HasTenant
             'Add `protected string $tenantModel = YourTenant::class;` or override tenantRelationModel().',
             static::class,
         ));
+    }
+
+    /**
+     * Column on this model that references the active tenant.
+     *
+     * Defaults to the package-wide convention (`tenant_id`). Override
+     * by declaring `protected string $tenantForeignKey = '<column>';`
+     * on the using model — required when different models belong to
+     * different tenant types (`agency_id`, `developer_id`, …).
+     */
+    public function getTenantForeignKey(): string
+    {
+        return property_exists($this, 'tenantForeignKey')
+            ? $this->tenantForeignKey
+            : TenantScope::FOREIGN_KEY;
     }
 }

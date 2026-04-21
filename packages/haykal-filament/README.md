@@ -202,6 +202,34 @@ final class ManagementPanelProvider extends BasePanel
 
 Register the provider in `bootstrap/providers.php`. Panels without tenancy (super-admin dashboards, system settings) return `null` from `tenantModel()` and skip the tenant middleware stack.
 
+### Multiple tenant types: one panel per type
+
+Filament binds exactly one tenant model per panel, so applications with multiple tenant types (for example, **Agency** and **Development Company**) implement **one panel per type**. Each panel declares its own tenant model, middleware stack, login route, and URL prefix; users working with Agencies sign in at `/agency/...` and never see Developer resources, and vice versa.
+
+```php
+final class AgencyPanelProvider extends BasePanel
+{
+    protected function getId(): string { return 'agency'; }
+
+    protected function tenantModel(): ?string { return Agency::class; }
+    protected function tenantSlugAttribute(): ?string { return 'slug'; }
+
+    protected function customizePanel(Panel $panel): Panel { /* ... */ }
+}
+
+final class DevelopmentCompanyPanelProvider extends BasePanel
+{
+    protected function getId(): string { return 'developers'; }
+
+    protected function tenantModel(): ?string { return DevelopmentCompany::class; }
+    protected function tenantSlugAttribute(): ?string { return 'slug'; }
+
+    protected function customizePanel(Panel $panel): Panel { /* ... */ }
+}
+```
+
+`FilamentTenancyMiddleware` stores whichever tenant the active panel resolves into `Tenancy::setTenantId(...)` as a single value — only one tenant type is active per request. Resources on each panel declare their own `$tenantForeignKey` (see `haykal-core`'s "Multiple tenant types" section) so queries filter on the correct column (`agency_id` for `Property`, `developer_id` for `Project`) against that single active id.
+
 ### Hooks exposed by `BasePanel`
 
 | Hook | Default | Purpose |
