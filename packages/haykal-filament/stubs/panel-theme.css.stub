@@ -1,5 +1,5 @@
 @import '../../../../vendor/filament/filament/resources/css/theme.css';
-@import '../haykal/base-theme.css';
+@import '../../../../vendor/hitaqnia/haykal-filament/resources/css/base-theme.css';
 
 @source '../../../../app/Filament/{{ panelStudly }}/**/*.php';
 @source '../../../../app/Panels/{{ panelStudly }}/**/*.php';
@@ -10,7 +10,8 @@
  * {{ panelStudly }} panel overrides
  * --------------------------------------------------------------------
  *
- * Panel-specific CSS belongs here. The `base-theme.css` import above
- * provides the shared Haykal look and feel; anything added below
- * applies only to the {{ panelStudly }} panel.
+ * The two imports above pull Filament's default theme and the shared
+ * Haykal base theme directly from the vendor directory — updates to
+ * either flow through `composer update` without re-publishing. Any
+ * {{ panelStudly }}-specific CSS belongs below this line.
  */

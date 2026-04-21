@@ -11,21 +11,30 @@ use Illuminate\Support\Str;
 /**
  * Scaffold a Filament theme entry file for a named panel.
  *
- * Copies the Haykal base theme alongside a per-panel theme file populated
- * with the correct Tailwind 4 `@source` directives for the panel's PHP
- * and Blade paths. Applications pass the panel's kebab-case identifier:
+ * Creates `resources/css/filament/<panel>/theme.css` preconfigured to
+ * import Filament's default theme and the Haykal base theme directly
+ * from the vendor directory, plus the Tailwind 4 `@source` directives
+ * for the panel's PHP and Blade paths. Because both imports reference
+ * the vendor paths, theme updates flow through `composer update` — no
+ * re-publishing required.
  *
  *     php artisan haykal:publish-theme management
  *
- * The command is idempotent: the shared `resources/css/haykal/base-theme.css`
- * is copied once (re-run with `--force` to overwrite), and each subsequent
- * invocation creates the panel entry file without touching the base copy.
+ * Existing panel themes are preserved unless `--force` is passed.
+ *
+ * Applications that want to fork the base theme for per-application
+ * changes can publish it explicitly via:
+ *
+ *     php artisan vendor:publish --tag=haykal-filament-theme
+ *
+ * That path is rare — prefer extending the panel theme file instead
+ * so the shared base continues to receive package updates.
  */
 final class PublishThemeCommand extends Command
 {
-    protected $signature = 'haykal:publish-theme {panel : The panel identifier (kebab-case)} {--force : Overwrite existing files}';
+    protected $signature = 'haykal:publish-theme {panel : The panel identifier (kebab-case)} {--force : Overwrite an existing panel theme}';
 
-    protected $description = 'Publish the Haykal base theme and scaffold a per-panel theme entry file.';
+    protected $description = 'Scaffold a Filament panel theme that references the Haykal base theme from the vendor directory.';
 
     public function __construct(private readonly Filesystem $files)
     {
@@ -36,29 +45,10 @@ final class PublishThemeCommand extends Command
     {
         $panelKebab = Str::of($this->argument('panel'))->kebab()->toString();
         $panelStudly = Str::studly($panelKebab);
-        $force = (bool) $this->option('force');
 
-        $this->publishBaseTheme($force);
-        $this->scaffoldPanelTheme($panelKebab, $panelStudly, $force);
+        $this->scaffoldPanelTheme($panelKebab, $panelStudly, (bool) $this->option('force'));
 
         return self::SUCCESS;
-    }
-
-    private function publishBaseTheme(bool $force): void
-    {
-        $source = __DIR__.'/../../resources/css/base-theme.css';
-        $target = resource_path('css/haykal/base-theme.css');
-
-        if ($this->files->exists($target) && ! $force) {
-            $this->components->info("Base theme already present at {$target}. Use --force to overwrite.");
-
-            return;
-        }
-
-        $this->files->ensureDirectoryExists(dirname($target));
-        $this->files->copy($source, $target);
-
-        $this->components->info("Published base theme to {$target}.");
     }
 
     private function scaffoldPanelTheme(string $panelKebab, string $panelStudly, bool $force): void
@@ -85,6 +75,7 @@ final class PublishThemeCommand extends Command
         $this->components->info("Scaffolded panel theme at {$target}.");
         $this->components->bulletList([
             'Register the panel theme in `vite.config.js` under `laravel()->input()`.',
+            'Wire the theme from your panel provider with `->viteTheme(...)`.',
             'Install `@tailwindcss/typography` if it is not already a devDependency.',
             'Run `npm run build` (or `bun run build`) to compile the panel theme.',
         ]);

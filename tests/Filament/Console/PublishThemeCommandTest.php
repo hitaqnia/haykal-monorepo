@@ -15,22 +15,45 @@ final class PublishThemeCommandTest extends FilamentTestCase
         parent::tearDown();
     }
 
-    public function test_scaffolds_base_theme_and_panel_theme_files(): void
+    public function test_scaffolds_a_panel_theme_file_importing_the_base_theme_from_vendor(): void
     {
         $this->artisan('haykal:publish-theme', ['panel' => 'management'])
             ->assertSuccessful();
 
-        $baseTheme = resource_path('css/haykal/base-theme.css');
         $panelTheme = resource_path('css/filament/management/theme.css');
 
-        $this->assertTrue(File::exists($baseTheme), 'Base theme should be copied.');
         $this->assertTrue(File::exists($panelTheme), 'Panel theme should be scaffolded.');
 
-        $panelContents = File::get($panelTheme);
+        $contents = File::get($panelTheme);
 
-        $this->assertStringContainsString('Management panel overrides', $panelContents);
-        $this->assertStringContainsString('@source \'../../../../app/Panels/Management/**/*.php\'', $panelContents);
-        $this->assertStringContainsString('@source \'../../../../resources/views/filament/management/**/*.blade.php\'', $panelContents);
+        $this->assertStringContainsString(
+            "@import '../../../../vendor/hitaqnia/haykal-filament/resources/css/base-theme.css'",
+            $contents,
+            'Base theme should be imported directly from the vendor path so updates propagate via composer update.',
+        );
+        $this->assertStringContainsString(
+            "@import '../../../../vendor/filament/filament/resources/css/theme.css'",
+            $contents,
+        );
+        $this->assertStringContainsString('Management panel overrides', $contents);
+        $this->assertStringContainsString("@source '../../../../app/Panels/Management/**/*.php'", $contents);
+        $this->assertStringContainsString(
+            "@source '../../../../resources/views/filament/management/**/*.blade.php'",
+            $contents,
+        );
+    }
+
+    public function test_base_theme_is_not_copied_into_the_application(): void
+    {
+        $this->artisan('haykal:publish-theme', ['panel' => 'management'])
+            ->assertSuccessful();
+
+        $copiedBase = resource_path('css/haykal/base-theme.css');
+
+        $this->assertFalse(
+            File::exists($copiedBase),
+            'The base theme should remain in vendor so updates propagate via composer update.',
+        );
     }
 
     public function test_existing_panel_theme_is_preserved_without_force(): void

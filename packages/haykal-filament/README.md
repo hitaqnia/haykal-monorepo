@@ -66,9 +66,9 @@ Filament foundation for HiTaqnia Laravel applications.
 
 ### Theming and assets
 
-| Resource | Tag / Command |
+| Resource | Notes |
 |---|---|
-| `resources/css/base-theme.css` | Published via `php artisan haykal:publish-theme <panel>` or the `haykal-filament-theme` tag. |
+| `resources/css/base-theme.css` | Loaded directly from the vendor path by every scaffolded panel theme. Updates propagate through `composer update` — no republishing required. Publishable under `haykal-filament-theme` only when an application needs to fork the file for per-application overrides. |
 | `config/haykal-filament-icons.php` | Merged into `config.filament.icons` on register; publishable under `haykal-filament-icons`. |
 | `stubs/panel-theme.css.stub` | Publishable under `haykal-filament-stubs`; consumed by the publish-theme command. |
 
@@ -76,7 +76,7 @@ Filament foundation for HiTaqnia Laravel applications.
 
 | Command | Purpose |
 |---|---|
-| `haykal:publish-theme {panel} {--force}` | Copies the base theme to `resources/css/haykal/base-theme.css` and scaffolds a per-panel theme entry file at `resources/css/filament/<panel>/theme.css` with the correct Tailwind 4 `@source` directives. |
+| `haykal:publish-theme {panel} {--force}` | Scaffolds a per-panel theme entry file at `resources/css/filament/<panel>/theme.css` that `@import`s Filament's default theme and the Haykal base theme directly from the vendor directory and sets up the Tailwind 4 `@source` directives for the panel's PHP and Blade paths. |
 
 ---
 
@@ -115,7 +115,7 @@ In `config/auth.php`, register a guard for every panel that uses Huwiya authenti
 
 Panels may each use their own named guard (`admin`, `residents`, …). Filament resolves the guard for the active panel via `Filament::getAuthGuard()`.
 
-### 2. Scaffold the base theme
+### 2. Scaffold the panel theme
 
 Run the publish-theme command once per panel:
 
@@ -123,7 +123,7 @@ Run the publish-theme command once per panel:
 php artisan haykal:publish-theme admin
 ```
 
-The command copies the shared base theme to `resources/css/haykal/base-theme.css` and scaffolds `resources/css/filament/admin/theme.css` with the correct Tailwind `@source` directives. Register the panel theme in `vite.config.js`:
+The command scaffolds `resources/css/filament/admin/theme.css`. The scaffold `@import`s Filament's default theme and the Haykal base theme **directly from the vendor directory**, plus the correct Tailwind 4 `@source` directives for the panel's paths. Because both imports reference vendor paths, updates to either flow through `composer update` without republishing. Register the panel theme in `vite.config.js`:
 
 ```js
 laravel({
@@ -264,9 +264,33 @@ return [
 
 ## Theming
 
-Every panel has its own theme entry file that `@import`s the shared base theme and adds panel-specific styles. The `haykal:publish-theme` command scaffolds both; subsequent runs skip existing files unless `--force` is passed.
+Every panel has its own theme entry file that `@import`s the shared base theme from the vendor directory and adds panel-specific styles below. The `haykal:publish-theme` command scaffolds the panel file; subsequent runs skip existing files unless `--force` is passed.
 
-Tailwind 4 CSS-first configuration lives entirely in the panel theme file — the package does not publish any Tailwind config. The scaffolded panel theme includes `@source` directives for `app/Panels/<Name>`, `app/Filament/<Name>`, and `resources/views/panels/<name>` out of the box; extend the list for application-specific source paths.
+**The base theme is never copied into the application.** The scaffolded panel theme references `vendor/hitaqnia/haykal-filament/resources/css/base-theme.css` directly, so updates to the shared theme flow to every panel via `composer update` — no republishing, no drift between panels or applications.
+
+A scaffolded panel theme looks like:
+
+```css
+@import '../../../../vendor/filament/filament/resources/css/theme.css';
+@import '../../../../vendor/hitaqnia/haykal-filament/resources/css/base-theme.css';
+
+@source '../../../../app/Panels/Management/**/*.php';
+@source '../../../../resources/views/filament/management/**/*.blade.php';
+
+/* Management panel overrides go below. */
+```
+
+Tailwind 4 CSS-first configuration lives entirely in the panel theme file — the package does not publish any Tailwind config. Extend the `@source` list for application-specific content paths.
+
+### Forking the base theme
+
+Applications that need to change the shared base CSS across every panel can publish the file explicitly:
+
+```bash
+php artisan vendor:publish --tag=haykal-filament-theme
+```
+
+After publishing, update each panel theme's `@import` to point at the local copy (`resources/css/haykal/base-theme.css`). **This opts out of upstream updates** — prefer extending the panel theme files instead whenever possible so the shared base continues to receive package updates.
 
 ---
 
