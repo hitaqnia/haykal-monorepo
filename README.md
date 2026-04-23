@@ -1,44 +1,106 @@
-# hitaqnia/haykal
+# Haykal
 
-Metapackage for full-stack HiTaqnia Laravel applications.
+HiTaqnia's internal Laravel boilerplate package suite.
 
-`hitaqnia/haykal` is a convenience entry point that installs the two runtime packages in the Haykal suite at once: `hitaqnia/haykal-api` (API layer, Scramble integration, `ApiProvider` composition) and `hitaqnia/haykal-filament` (Filament base classes, Huwiya login, shared theme). Both packages transitively install `hitaqnia/haykal-core`, so a single `composer require hitaqnia/haykal` brings up the entire stack.
+Haykal consolidates the shared layer that every HiTaqnia Laravel project uses — API response scaffolding, Filament base classes, Identity integration with the Huwiya IdP, tenancy utilities, domain concerns — into a maintained, versioned set of Composer packages under the `hitaqnia/` vendor namespace.
 
-This package contains no PHP code of its own.
+## Layout
 
----
-
-## When to require this package
-
-Require `hitaqnia/haykal` when the application exposes **both** an HTTP API and one or more Filament panels — the typical HiTaqnia project shape.
-
-Applications that only expose an API (headless services, microservices without admin panels) should require `hitaqnia/haykal-api` directly. Applications that only expose Filament panels (internal admin tools without a public API surface) should require `hitaqnia/haykal-filament` directly. Both flavors pull `haykal-core` transitively.
-
----
-
-## Installation
-
-```bash
-composer require hitaqnia/haykal:@dev
+```
+haykal/
+├── composer.json          Monorepo root: path repositories + shared dev tooling.
+├── Makefile               Local dev commands (test, format, install).
+├── packages/
+│   ├── haykal-core/       hitaqnia/haykal-core — shared kernel (Result, tenancy, Identity, middlewares).
+│   ├── haykal-api/        hitaqnia/haykal-api — API response layer, Scramble extensions, /me endpoint.
+│   ├── haykal-filament/   hitaqnia/haykal-filament — Filament foundation (BasePanel, BaseResource, base theme).
+│   └── haykal/            hitaqnia/haykal — metapackage (api + filament).
+├── boilerplate/           New project template (Stage 5).
+├── smoke/                 Throwaway Laravel app used to validate installs end-to-end (Stage 4).
+└── tests/
+    ├── Core/              haykal-core tests.
+    ├── Api/               haykal-api tests.
+    ├── Filament/          haykal-filament tests.
+    └── Fixtures/          Shared fixtures (FakeHuwiyaIdP, etc.).
 ```
 
-After installation, follow each sub-package's own configuration guide — the metapackage does not add configuration of its own:
+Standalone Filament plugins (Mapbox, ViewerJS) live outside this monorepo in `/Users/mahdi/Work/filament-plugins/` — each with its own git repo and release cadence. They are not part of Haykal.
 
-1. **[`haykal-core`](../haykal-core/README.md)** — remove Laravel's default users migration, wire the auth provider to Haykal's `User`, publish Spatie permission / Media Library configs, configure Huwiya, slot middlewares, run migrations.
-2. **[`haykal-api`](../haykal-api/README.md)** — publish the routes stub, register the Identity API provider, register the `huwiya-api` guard.
-3. **[`haykal-filament`](../haykal-filament/README.md)** — register the Huwiya web guard, scaffold a panel theme with `php artisan haykal:publish-theme <panel>`, define one panel provider per tenant type.
+### `smoke/` — local validation app
 
----
+`smoke/` is a throwaway Laravel 13 application used to validate the full Haykal stack end-to-end. It is git-ignored (see `.gitignore`) and is re-created as needed.
 
-## Requirements
+Recreate it with one command:
 
-- PHP 8.3 or later
-- Laravel 13 or later
-- Filament 5.5 or later
-- A running instance of the Huwiya Identity Provider
+```bash
+./scripts/bootstrap-smoke.sh
+```
 
----
+The script scaffolds a fresh Laravel 13 skeleton, rewrites `composer.json` to pull Haykal through local path repositories, removes the conflicting default users migration, publishes all required configs, wires Spatie permission / Media Library / Huwiya, registers a smoke Filament panel, and runs migrations. Idempotent — it tears down any previous `smoke/` first.
 
-## Versioning
+After it finishes:
 
-The metapackage tracks the Haykal suite's major version and pins its dependencies to the matching minor range so `composer require hitaqnia/haykal:^1.0` resolves consistent versions of the underlying packages. Pin to a concrete version when a stable major lands; while the suite is in `@dev`, every release bumps together.
+```bash
+cd smoke && php artisan serve --port=8765
+
+# 401 Haykal envelope
+curl -i http://127.0.0.1:8765/api/identity/me
+
+# Scramble spec with the Huwiya bearer scheme
+curl -i http://127.0.0.1:8765/docs/identity-api.json
+
+# Filament panel → /login → Huwiya OAuth authorize redirect
+curl -i http://127.0.0.1:8765/
+```
+
+The smoke app proves:
+
+- Migrations run cleanly (`users` with all Huwiya claim columns, permission tables with teams, media, notifications).
+- `GET /api/identity/me` returns the Haykal envelope (401 unauthenticated, 200 with a Huwiya JWT bearer token).
+- The Scramble docs UI at `/docs/identity-api` and the raw spec at `/docs/identity-api.json` render with the bearer security scheme.
+- A Filament panel extending `BasePanel` mounts, and `/login` 302s to `https://{HUWIYA_URL}/oauth/authorize?client_id=…&redirect_uri=…&response_type=code&state=…`.
+
+## Dependencies between packages
+
+- `haykal-core` is the kernel. Every other haykal package depends on it.
+- `haykal-api` depends on `haykal-core`.
+- `haykal-filament` depends on `haykal-core`.
+- `haykal` (metapackage) depends on `haykal-api` + `haykal-filament`.
+- The `filament-mapbox` and `filament-viewerjs` plugins live in their own repos outside this monorepo.
+
+`haykal-core` hard-requires the common ecosystem packages (Spatie permission / medialibrary / translatable / data, Huwiya SDK, Horizon, FCM, flysystem-s3, predis, geophp) so consuming apps get the full hitaqnia stack with a single `composer require`.
+
+## Authentication
+
+Huwiya is the sole authentication mechanism. Local phone+OTP auth, Sanctum tokens, and device tracking are not shipped. Follow the [`hitaqnia/huwiya-laravel`](https://github.com/hitaqnia/huwiya-laravel) SDK's documentation for auth setup.
+
+## Local development
+
+All packages are resolved via Composer path repositories declared in the root `composer.json`. No publishing is configured; everything runs locally.
+
+```bash
+composer install      # Installs all packages + dev tooling.
+make test             # Runs the full test suite.
+make format           # Formats code with Pint.
+```
+
+## Stages
+
+Implementation proceeds in six stages:
+
+1. **Stage 0** — Monorepo scaffolding. (current)
+2. **Stage 1** — `haykal-core` (kernel).
+3. **Stage 2** — `haykal-api`.
+4. **Stage 3** — `haykal-filament`.
+5. **Stage 4** — `haykal` metapackage + local validation.
+6. **Stage 5** — `boilerplate/` new project template.
+
+The standalone Filament plugins (`filament-mapbox`, `filament-viewerjs`) are tracked separately in `/Users/mahdi/Work/filament-plugins/` and have their own roadmap.
+
+See `/Users/mahdi/.claude/plans/in-the-current-directory-wild-rain.md` for the full plan.
+
+## Scope
+
+- Haykal is for **new projects only**. Existing `laravel-boilerplate` and `hibayt-backend` remain untouched.
+- Deployment scaffolding (Dockerfiles, supervisord, Jenkinsfiles) is deferred.
+- Any form of publishing (Packagist, public GitHub) is deferred.

@@ -1,0 +1,51 @@
+name: Split packages
+
+# Mirrors each subdirectory under `packages/*` into its own read-only
+# GitHub repo whenever a tag is pushed to the monorepo. Packagist watches
+# the child repos and picks up the tag as a new release.
+#
+# Child repos must exist before the first tag is pushed:
+#   github.com/hitaqnia/haykal-core
+#   github.com/hitaqnia/haykal-api
+#   github.com/hitaqnia/haykal-filament
+#   github.com/hitaqnia/haykal         (the metapackage)
+#
+# Requires one repository secret, `ORG_SPLIT_TOKEN` — a Personal Access
+# Token with `repo` scope on the child repos. Do NOT reuse the default
+# `GITHUB_TOKEN`; it cannot push across repositories.
+
+on:
+  push:
+    tags:
+      - "*"
+
+jobs:
+  split:
+    name: Split ${{ matrix.package.name }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package:
+          - { name: haykal-core,     path: packages/haykal-core     }
+          - { name: haykal-api,      path: packages/haykal-api      }
+          - { name: haykal-filament, path: packages/haykal-filament }
+          - { name: haykal,          path: packages/haykal          }
+
+    steps:
+      - name: Checkout monorepo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Split ${{ matrix.package.path }} -> hitaqnia/${{ matrix.package.name }}
+        uses: symplify/monorepo-split-github-action@v2.3.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.ORG_SPLIT_TOKEN }}
+        with:
+          tag: ${GITHUB_REF#refs/tags/}
+          package_directory: ${{ matrix.package.path }}
+          repository_organization: hitaqnia
+          repository_name: ${{ matrix.package.name }}
+          user_name: "github-actions[bot]"
+          user_email: "github-actions[bot]@users.noreply.github.com"

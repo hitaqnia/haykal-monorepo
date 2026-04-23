@@ -1,0 +1,388 @@
+@plugin '@tailwindcss/typography';
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+hr {
+    @apply border-slate-200 my-3;
+}
+
+/************************* Scrollbars *************************/
+
+.fi-sidebar-nav,
+.fi-main,
+body {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.fi-sidebar-nav::-webkit-scrollbar,
+.fi-main::-webkit-scrollbar,
+body::-webkit-scrollbar {
+    display: none;
+}
+
+/************************* Login Page *************************/
+
+.login-right-section {
+    @apply hidden lg:block;
+}
+
+/************************* Main Content *************************/
+
+.fi-main-ctn {
+    @apply lg:bg-[#06202B];
+}
+
+.fi-main {
+    @apply p-0 lg:bg-slate-50 ltr:lg:rounded-tl-xl rtl:lg:rounded-tr-xl lg:mt-1;
+}
+
+.fi-page-main {
+    @apply px-6;
+}
+
+.fi-layout-sidebar-toggle-btn-ctn {
+    @apply bg-white;
+}
+
+.fi-header-subheading {
+    @apply text-base;
+}
+
+/************************* Header *************************/
+
+.fi-header {
+    @apply bg-white p-6 mb-5 border-b border-slate-200 ltr:lg:rounded-tl-xl rtl:lg:rounded-tr-xl;
+}
+
+/************************* Header with Breadcrumbs *************************/
+
+.fi-page-header-main-ctn {
+    @apply pt-0 gap-0;
+}
+
+.fi-header-has-breadcrumbs {
+    @apply bg-white px-6 pt-5 pb-6;
+}
+
+.fi-breadcrumbs {
+    @apply mb-5;
+}
+
+/************************* Primary Sidebar *************************/
+
+.primary-sidebar {
+    @apply bg-[#06202B] border-e border-e-slate-700;
+}
+
+.primary-sidebar-item { }
+
+.primary-sidebar-item-link {
+    @apply flex items-center justify-center bg-transparent hover:bg-[#1D343E] p-1 w-10 h-10 rounded-lg border border-transparent transition-colors;
+}
+
+.primary-sidebar-item-link.active {
+    @apply bg-[#1D343E] shadow-lg;
+}
+
+.primary-sidebar-item-icon {
+    @apply text-[#ffffff] h-7 w-7;
+}
+
+/************************* Sidebar *************************/
+
+.fi-sidebar {
+    background-color: #06202B;
+}
+
+.fi-sidebar > .fi-sidebar-header-ctn {
+    @apply hidden;
+}
+
+.fi-sidebar-nav-groups {
+    @apply -space-y-4;
+}
+
+.fi-sidebar .fi-sidebar-group-label {
+    color: #7AE2CF;
+}
+
+.fi-sidebar .fi-sidebar-group-collapse-btn {
+    color: #7AE2CF;
+}
+
+.fi-sidebar .fi-active > .fi-sidebar-item-btn {
+    background-color: #1D343E;
+}
+
+.fi-sidebar .fi-sidebar-item-btn:hover {
+    background-color: #1D343E;
+}
+
+.fi-sidebar .fi-sidebar-item-icon {
+    color: #7AE2CF;
+
+    @apply h-5.5 w-5.5;
+}
+
+.fi-sidebar .fi-sidebar-item-label {
+    color: #ffffff;
+
+    @apply tracking-wide;
+}
+
+/************************* User Menu *************************/
+
+.fi-user-menu-trigger-text {
+    color: #7AE2CF;
+}
+
+/************************* Buttons *************************/
+
+.fi-btn {
+    @apply rounded-lg py-2 px-7 text-[#06202B] tracking-wide;
+}
+
+.fi-btn.fi-color-danger {
+    @apply text-white;
+}
+
+/************************* Sections *************************/
+
+.fi-section {
+    @apply shadow-none ring-0 border-1 border-slate-200;
+}
+
+.fi-section > .fi-section-header {
+    @apply py-3.5;
+}
+
+.fi-section-header-heading {
+    color: #06202B;
+}
+
+.fi-section-has-header .fi-section-content-ctn {
+    @apply border-t border-slate-200;
+}
+
+.fi-section-not-contained {
+    @apply border-0;
+}
+
+.fi-sc-has-gap {
+    @apply gap-4;
+}
+
+/************************* Tables *************************/
+
+.fi-ta-main {
+    @apply bg-slate-50;
+}
+
+.fi-ta-ctn {
+    @apply ring-0 shadow-none;
+}
+
+.fi-ta-content-ctn {
+    @apply -mx-6 md:mx-auto;
+}
+
+.fi-ta-table {
+    border-collapse: separate !important;
+    border-spacing: 0;
+}
+
+.fi-ta-filters-above-content-ctn {
+    @apply border-0;
+}
+
+.fi-ta-header-toolbar {
+    @apply border-0 px-0;
+}
+
+.fi-ta-filter-indicators {
+    @apply border-0 px-0;
+}
+
+.fi-ta-selection-indicator {
+    @apply border-0 px-0;
+}
+
+.fi-ta-filters-above-content-ctn {
+    @apply bg-white border-1 border-slate-200 rounded-xl;
+}
+
+.fi-ta-header {
+    @apply border-0 px-0;
+}
+
+.fi-ta-text-item > .fi-badge {
+    @apply py-1.5 px-4 tracking-wider ring-0 font-semibold;
+}
+
+.fi-ta-header-cell {
+    @apply bg-slate-50 py-3 text-slate-600;
+}
+
+.fi-ta-header-cell-sort-btn {
+    @apply justify-between;
+}
+
+.fi-ta-actions-header-cell {
+    @apply bg-slate-50;
+}
+
+.fi-pagination {
+    @apply border-0 px-0;
+}
+
+.fi-pagination-items {
+    @apply shadow-none ring-slate-200;
+}
+
+.fi-ta tbody {
+    @apply bg-white;
+}
+
+.fi-ta-empty-state {
+    @apply bg-white border-1 border-slate-200 rounded-b-xl;
+}
+
+.fi-ta table tr th,
+.fi-ta table tr td {
+    @apply ltr:border-r rtl:border-l border-b border-slate-200;
+}
+
+.fi-ta table tr th:first-child,
+.fi-ta table tr td:first-child {
+    @apply ltr:border-l rtl:border-r border-slate-200;
+}
+
+.fi-ta table tr th {
+    @apply border-t border-slate-200;
+}
+
+/* top-left border-radius */
+.fi-ta table tr:first-child th:first-child {
+    @apply ltr:rounded-tl-lg rtl:rounded-tr-lg;
+}
+
+/* top-right border-radius */
+.fi-ta table tr:first-child th:last-child {
+    @apply ltr:rounded-tr-lg rtl:rounded-tl-lg;
+}
+
+/* bottom-left border-radius */
+.fi-ta table tr:last-child td:first-child {
+    @apply ltr:rounded-bl-lg rtl:rounded-br-lg;
+}
+
+/* bottom-right border-radius */
+.fi-ta table tr:last-child td:last-child {
+    @apply ltr:rounded-br-xl rtl:rounded-bl-xl;
+}
+
+/************************* Tabs *************************/
+
+.fi-sc-tabs.custom {
+    @apply bg-white -mx-6 -mt-7 border-t-0 border-b border-slate-200;
+}
+
+.fi-sc-tabs.custom .fi-tabs {
+    @apply border-0 py-2 px-6 shadow-none rounded-none ring-0 ms-0;
+}
+
+.fi-sc-tabs.custom .fi-tabs-item {
+    @apply px-5 tracking-wide;
+}
+
+.fi-sc-tabs.custom .fi-tabs-item.fi-active {
+    @apply bg-slate-50;
+}
+
+.fi-sc-tabs.custom .fi-tabs-item .fi-badge {
+    @apply tracking-wide ring-0;
+}
+
+/************************* Infolists *************************/
+
+.fi-in-text > .fi-badge {
+    @apply py-1 px-3 tracking-wider;
+}
+
+/************************* Forms *************************/
+
+.fi-input-wrp {
+    @apply shadow-none;
+}
+
+.fi-fo-radio-card__label {
+    @apply text-[#1D343E]!;
+}
+
+.fi-fo-radio-card__description {
+    @apply text-gray-500!;
+}
+
+.fi-fo-table-repeater table {
+    @apply shadow-none ring-slate-200;
+}
+
+.fi-fo-table-repeater th {
+    @apply bg-slate-50 text-slate-600;
+}
+
+.fi-fo-table-repeater th:first-child {
+    @apply ltr:rounded-tl-xl ltr:rounded-tr-none rtl:rounded-tr-xl rtl:rounded-tl-none;
+}
+
+.fi-fo-table-repeater th:last-child {
+    @apply ltr:rounded-tr-xl ltr:rounded-tl-none rtl:rounded-tl-xl rtl:rounded-tr-none;
+}
+
+.fi-sc-tabs.fi-contained {
+    @apply ring-0 shadow-none border border-slate-200;
+}
+
+.fi-fo-repeater-item {
+    @apply ring-0 shadow-none border border-slate-200;
+}
+
+.fi-fo-field .fi-ta-ctn {
+    @apply bg-white;
+}
+
+.fi-fo-field .fi-ta-header-toolbar {
+    @apply bg-white;
+}
+
+.fi-fo-field .fi-pagination {
+    @apply bg-white;
+}
+
+/************************* Stats *************************/
+
+.fi-wi-stats-overview-stat {
+    @apply shadow-none ring-0 border border-slate-200;
+}
+
+
+.translatable-tabs {
+    @apply border-none;
+
+    .fi-tabs {
+        @apply p-0 pb-1;
+
+        .fi-tabs-item-label {
+            @apply text-xs;
+        }
+    }
+
+    .fi-sc-tabs-tab {
+        @apply p-0 pt-3;
+    }
+}

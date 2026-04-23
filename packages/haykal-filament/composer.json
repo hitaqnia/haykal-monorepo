@@ -1,0 +1,29 @@
+{
+    "name": "hitaqnia/haykal-filament",
+    "description": "Haykal Filament foundation: BasePanel, BaseResource, base pages, Huwiya login page, translatable tabs, base theme, curated plugin set.",
+    "type": "library",
+    "license": "proprietary",
+    "version": "1.0.0-dev",
+    "require": {
+        "php": "^8.3",
+        "filament/filament": "^5.5",
+        "hitaqnia/haykal-core": "@dev",
+        "illuminate/contracts": "^13.0",
+        "illuminate/support": "^13.0",
+        "lara-zeus/spatie-translatable": "^2.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "HiTaqnia\\Haykal\\Filament\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "HiTaqnia\\Haykal\\Filament\\HaykalFilamentServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

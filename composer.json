@@ -1,14 +1,67 @@
 {
-    "name": "hitaqnia/haykal",
-    "description": "Haykal metapackage: installs haykal-api + haykal-filament for full-stack projects.",
-    "type": "metapackage",
+    "name": "hitaqnia/haykal-monorepo",
+    "description": "HiTaqnia Laravel boilerplate package suite (monorepo).",
+    "type": "project",
     "license": "proprietary",
-    "version": "1.0.0-dev",
     "require": {
         "php": "^8.3",
+        "hitaqnia/haykal-core": "@dev",
         "hitaqnia/haykal-api": "@dev",
-        "hitaqnia/haykal-filament": "@dev"
+        "hitaqnia/haykal-filament": "@dev",
+        "hitaqnia/haykal": "@dev"
     },
+    "require-dev": {
+        "laravel/pint": "^1.23",
+        "orchestra/testbench": "^11.0",
+        "phpunit/phpunit": "^12.0"
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "HiTaqnia\\Haykal\\Tests\\": "tests/"
+        }
+    },
+    "repositories": [
+        {
+            "type": "path",
+            "url": "packages/haykal-core",
+            "options": {
+                "symlink": true
+            }
+        },
+        {
+            "type": "path",
+            "url": "packages/haykal-api",
+            "options": {
+                "symlink": true
+            }
+        },
+        {
+            "type": "path",
+            "url": "packages/haykal-filament",
+            "options": {
+                "symlink": true
+            }
+        },
+        {
+            "type": "path",
+            "url": "packages/haykal",
+            "options": {
+                "symlink": true
+            }
+        }
+    ],
     "minimum-stability": "dev",
-    "prefer-stable": true
+    "prefer-stable": true,
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true,
+            "php-http/discovery": true
+        },
+        "sort-packages": true
+    },
+    "scripts": {
+        "test": "phpunit",
+        "format": "pint",
+        "format:check": "pint --test"
+    }
 }
