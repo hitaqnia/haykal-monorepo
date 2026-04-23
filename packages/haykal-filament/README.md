@@ -16,6 +16,8 @@ Filament foundation for HiTaqnia Laravel applications.
 - [Resources and pages](#resources-and-pages)
 - [Theming](#theming)
 - [Translatable forms](#translatable-forms)
+- [Mapbox components](#mapbox-components)
+- [ViewerJS image gallery](#viewerjs-image-gallery)
 - [Customization](#customization)
 - [Testing](#testing)
 
@@ -55,6 +57,22 @@ Filament foundation for HiTaqnia Laravel applications.
 | Class | Purpose |
 |---|---|
 | `HiTaqnia\Haykal\Filament\Forms\TranslatableTabs` | Tabbed multi-language editor for `spatie/laravel-translatable` attributes, with per-locale icon state and configurable required-language policy. |
+
+### Mapbox (form fields + infolist entries)
+
+| Class | Purpose |
+|---|---|
+| `HiTaqnia\Haykal\Filament\Mapbox\Components\MapboxLocationPicker` | Form field that captures a `{lng, lat}` pair via a draggable marker. |
+| `HiTaqnia\Haykal\Filament\Mapbox\Components\MapboxLocationViewer` | Read-only infolist entry that displays a stored `{lng, lat}` location. |
+| `HiTaqnia\Haykal\Filament\Mapbox\Components\MapboxPolygonsDrawer` | Form field that captures a GeoJSON `FeatureCollection` of polygons drawn on the map. Supports `maxPolygons()` cap. |
+| `HiTaqnia\Haykal\Filament\Mapbox\Components\MapboxPolygonsViewer` | Read-only infolist entry that renders a stored GeoJSON `FeatureCollection`. |
+| `HiTaqnia\Haykal\Filament\Mapbox\Concerns\InteractsWithMapbox` | Fluent configuration trait shared by all four components (container, height, style, center, zoom, navigation control). |
+
+### ViewerJS
+
+| Class | Purpose |
+|---|---|
+| `HiTaqnia\Haykal\Filament\ViewerJs\Components\ImageGallery` | Infolist entry that renders a grid of images with ViewerJS lightbox support. Accepts an array or closure. |
 
 ### Middlewares
 
@@ -345,6 +363,143 @@ The component clones each declared field per locale, binding state paths to `<fi
 
 ---
 
+## Mapbox components
+
+Four components cover every Mapbox use case encountered across HiTaqnia projects. All four share the same fluent configuration API through the `InteractsWithMapbox` trait.
+
+### Configuration
+
+Add a Mapbox access token to `.env`:
+
+```dotenv
+MAPBOX_TOKEN=pk.your-mapbox-access-token
+```
+
+Publish the config only when overrides are needed — the token is already read from `MAPBOX_TOKEN` through the package default:
+
+```bash
+php artisan vendor:publish --tag=haykal-filament-mapbox-config
+```
+
+### Location picker (form field)
+
+Captures a `{lng, lat}` coordinate pair from a draggable marker. Binds to a JSON column or any cast that accepts an associative array.
+
+```php
+use HiTaqnia\Haykal\Filament\Mapbox\Components\MapboxLocationPicker;
+
+MapboxLocationPicker::make('coordinates')
+    ->mapStyle('mapbox://styles/mapbox/streets-v12')
+    ->mapCenter([44.3661, 33.3152])  // Baghdad
+    ->mapZoom(12)
+    ->mapHeight(500)
+    ->navigationControl();
+```
+
+Stored shape:
+
+```json
+{ "lng": 44.3712, "lat": 33.3203 }
+```
+
+### Location viewer (infolist entry)
+
+Renders a stored `{lng, lat}` as a read-only map marker.
+
+```php
+use HiTaqnia\Haykal\Filament\Mapbox\Components\MapboxLocationViewer;
+
+MapboxLocationViewer::make('coordinates')
+    ->mapStyle('mapbox://styles/mapbox/satellite-v9')
+    ->mapHeight(400);
+```
+
+### Polygons drawer (form field)
+
+Captures a GeoJSON `FeatureCollection` of user-drawn polygons. `maxPolygons()` caps how many the user can create; `-1` (the default) means unlimited.
+
+```php
+use HiTaqnia\Haykal\Filament\Mapbox\Components\MapboxPolygonsDrawer;
+
+MapboxPolygonsDrawer::make('boundaries')
+    ->maxPolygons(3)
+    ->mapCenter([44.3661, 33.3152])
+    ->mapZoom(13);
+```
+
+Stored shape:
+
+```json
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": { "type": "Polygon", "coordinates": [[[...]]] },
+      "properties": {}
+    }
+  ]
+}
+```
+
+### Polygons viewer (infolist entry)
+
+Renders a stored `FeatureCollection` read-only and auto-fits the map to the polygons.
+
+```php
+use HiTaqnia\Haykal\Filament\Mapbox\Components\MapboxPolygonsViewer;
+
+MapboxPolygonsViewer::make('boundaries')
+    ->mapHeight(500);
+```
+
+### Shared fluent API
+
+Every Mapbox component accepts these setters through `InteractsWithMapbox`:
+
+| Setter | Default | Purpose |
+|---|---|---|
+| `mapContainer(string)` | Field name | DOM id of the map container. |
+| `mapHeight(int)` | `400` | Pixel height of the map. |
+| `mapStyle(string)` | Mapbox default | Any `mapbox://styles/...` URL. |
+| `mapCenter(array)` | `[-74.5, 40]` | `[lng, lat]` for the initial viewport. Ignored when state is loaded and polygons auto-fit. |
+| `mapZoom(int)` | `9` | Initial zoom level. |
+| `navigationControl(bool)` | `false` | Show Mapbox's zoom/compass controls. |
+
+### Assets
+
+Both the Mapbox GL CSS (`mapbox-gl.css`, `mapbox-gl-draw.css`) and the compiled Alpine bundles for each component are registered with Filament automatically via `HaykalFilamentServiceProvider`. The bundles are loaded on request — pages that do not reference a Mapbox component pay no runtime cost.
+
+---
+
+## ViewerJS image gallery
+
+`ImageGallery` renders an infolist entry as a grid of image thumbnails. Clicking any thumbnail opens a ViewerJS lightbox over the full set.
+
+```php
+use HiTaqnia\Haykal\Filament\ViewerJs\Components\ImageGallery;
+
+// Array form: label => URL
+ImageGallery::make('photos')
+    ->images([
+        'Floor plan' => 'https://cdn.example.com/floor-plan.jpg',
+        'Elevation'  => 'https://cdn.example.com/elevation.jpg',
+        'Gallery'    => 'https://cdn.example.com/gallery.jpg',
+    ]);
+
+// Closure form: resolved on render, receives the Entry's container state
+ImageGallery::make('photos')
+    ->images(fn ($record) => $record->media()
+        ->where('collection_name', 'gallery')
+        ->get()
+        ->mapWithKeys(fn ($m) => [$m->name => $m->getUrl()])
+        ->all());
+```
+
+The component's CSS (`viewerjs` from unpkg) and Alpine bundle are registered by `HaykalFilamentServiceProvider` and loaded on request.
+
+---
+
 ## Customization
 
 ### Overriding hooks
@@ -359,8 +514,9 @@ Every override point is method-based — subclass `BasePanel`, override the rele
 
 | Tag | Contents |
 |---|---|
-| `haykal-filament-theme` | `resources/css/base-theme.css` → `resources/css/haykal/base-theme.css` |
+| `haykal-filament-theme` | `resources/css/base-theme.css` → `resources/css/haykal/base-theme.css` (fork only when the base needs app-specific overrides). |
 | `haykal-filament-icons` | `config/haykal-filament-icons.php` → `config/haykal-filament-icons.php` |
+| `haykal-filament-mapbox-config` | `config/mapbox.php` → `config/mapbox.php` (only needed when overriding the default `MAPBOX_TOKEN` env binding). |
 | `haykal-filament-stubs` | `stubs/panel-theme.css.stub` → `resources/stubs/haykal/panel-theme.css.stub` |
 
 ### Fixed conventions
