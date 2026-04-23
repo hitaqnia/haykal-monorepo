@@ -8,6 +8,8 @@ use Filament\Facades\Filament;
 use Filament\Pages\SimplePage;
 use Huwiya\Facades\Huwiya;
 use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Str;
 
 /**
  * Filament login page that delegates authentication to the Huwiya IdP.
@@ -19,10 +21,13 @@ use Illuminate\Http\Exceptions\HttpResponseException;
  * required MFA, and redirects back to `/huwiya/callback` where the SDK
  * exchanges the authorization code for a JWT and establishes the session.
  *
- * The page itself never renders — it always short-circuits with an HTTP
- * redirect response. Panels that need a pre-redirect confirmation screen
- * should register a different page and trigger the redirect from a
- * button action.
+ * Implementation note: we cannot delegate to `Huwiya::redirect()` directly
+ * because Livewire rebinds the `redirect` container singleton during
+ * component execution, and the SDK's return-type declaration expects
+ * Laravel's native `RedirectResponse`. We replicate the SDK's state-
+ * persistence and URL construction inline and throw a raw
+ * `HttpResponseException` so Filament short-circuits the Livewire
+ * lifecycle and emits the browser redirect.
  */
 class HuwiyaRedirectLogin extends SimplePage
 {
@@ -30,8 +35,25 @@ class HuwiyaRedirectLogin extends SimplePage
 
     public function mount(): void
     {
+        $guard = $this->guard();
+        Huwiya::assertGuardIsHuwiyaWeb($guard);
+
+        $state = Str::random(40);
+
+        session()->put('huwiya.oauth', [
+            'state' => $state,
+            'guard' => $guard,
+        ]);
+
+        $query = http_build_query([
+            'client_id' => config('huwiya.client_id'),
+            'redirect_uri' => config('huwiya.redirect_uri'),
+            'response_type' => 'code',
+            'state' => $state,
+        ]);
+
         throw new HttpResponseException(
-            Huwiya::redirect($this->guard()),
+            new RedirectResponse(rtrim((string) config('huwiya.url'), '/').'/oauth/authorize?'.$query),
         );
     }
 

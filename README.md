@@ -26,6 +26,21 @@ haykal/
 
 Standalone Filament plugins (Mapbox, ViewerJS) live outside this monorepo in `/Users/mahdi/Work/filament-plugins/` — each with its own git repo and release cadence. They are not part of Haykal.
 
+### `smoke/` — local validation app
+
+`smoke/` is a throwaway Laravel 13 application used to validate the full Haykal stack end-to-end. It is git-ignored (see `.gitignore`) and is re-created as needed. Scaffold locally with:
+
+```bash
+composer create-project laravel/laravel smoke --prefer-dist
+```
+
+Then follow each package's install guide, pointing the app's `composer.json` at `../packages/*` via path repositories. The app proves:
+
+- Migrations run cleanly (`users`, permission tables, media, notifications).
+- `GET /api/identity/me` returns the Haykal envelope (401 unauthenticated, 200 with a Huwiya JWT bearer token).
+- The Scramble docs UI at `/docs/identity-api` and the raw spec at `/docs/identity-api.json` render with the bearer security scheme.
+- A Filament panel extending `BasePanel` mounts, and `/login` redirects unauthenticated users to `https://{HUWIYA_URL}/oauth/authorize?...`.
+
 ## Dependencies between packages
 
 - `haykal-core` is the kernel. Every other haykal package depends on it.
