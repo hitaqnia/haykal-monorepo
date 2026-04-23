@@ -6,7 +6,7 @@
     "version": "1.0.0-dev",
     "require": {
         "php": "^8.3",
-        "hitaqnia/huwiya-laravel": "@dev",
+        "hitaqnia/huwiya-laravel": "^1.0",
         "illuminate/contracts": "^13.0",
         "illuminate/database": "^13.0",
         "illuminate/support": "^13.0",
@@ -31,6 +31,6 @@
             ]
         }
     },
-    "minimum-stability": "dev",
+    "minimum-stability": "stable",
     "prefer-stable": true
 }
