@@ -28,18 +28,37 @@ Standalone Filament plugins (Mapbox, ViewerJS) live outside this monorepo in `/U
 
 ### `smoke/` — local validation app
 
-`smoke/` is a throwaway Laravel 13 application used to validate the full Haykal stack end-to-end. It is git-ignored (see `.gitignore`) and is re-created as needed. Scaffold locally with:
+`smoke/` is a throwaway Laravel 13 application used to validate the full Haykal stack end-to-end. It is git-ignored (see `.gitignore`) and is re-created as needed.
+
+Recreate it with one command:
 
 ```bash
-composer create-project laravel/laravel smoke --prefer-dist
+./scripts/bootstrap-smoke.sh
 ```
 
-Then follow each package's install guide, pointing the app's `composer.json` at `../packages/*` via path repositories. The app proves:
+The script scaffolds a fresh Laravel 13 skeleton, rewrites `composer.json` to pull Haykal through local path repositories, removes the conflicting default users migration, publishes all required configs, wires Spatie permission / Media Library / Huwiya, registers a smoke Filament panel, and runs migrations. Idempotent — it tears down any previous `smoke/` first.
 
-- Migrations run cleanly (`users`, permission tables, media, notifications).
+After it finishes:
+
+```bash
+cd smoke && php artisan serve --port=8765
+
+# 401 Haykal envelope
+curl -i http://127.0.0.1:8765/api/identity/me
+
+# Scramble spec with the Huwiya bearer scheme
+curl -i http://127.0.0.1:8765/docs/identity-api.json
+
+# Filament panel → /login → Huwiya OAuth authorize redirect
+curl -i http://127.0.0.1:8765/
+```
+
+The smoke app proves:
+
+- Migrations run cleanly (`users` with all Huwiya claim columns, permission tables with teams, media, notifications).
 - `GET /api/identity/me` returns the Haykal envelope (401 unauthenticated, 200 with a Huwiya JWT bearer token).
 - The Scramble docs UI at `/docs/identity-api` and the raw spec at `/docs/identity-api.json` render with the bearer security scheme.
-- A Filament panel extending `BasePanel` mounts, and `/login` redirects unauthenticated users to `https://{HUWIYA_URL}/oauth/authorize?...`.
+- A Filament panel extending `BasePanel` mounts, and `/login` 302s to `https://{HUWIYA_URL}/oauth/authorize?client_id=…&redirect_uri=…&response_type=code&state=…`.
 
 ## Dependencies between packages
 
