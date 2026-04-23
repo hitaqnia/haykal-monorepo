@@ -57,7 +57,7 @@ Installing this package replaces Laravel's default authentication scaffolding en
 | Migration | Tables created |
 |---|---|
 | `create_users_table` | `users` (ULID id, `huwiya_id`, `name`, `phone`, `email`, `locale`, `zoneinfo`, `theme`, soft deletes), `sessions` |
-| `create_permission_tables` | Spatie permission schema with ULID primary keys; teams enabled for per-tenant role scoping |
+| `create_permission_tables` | Spatie permission schema with ULID primary keys. The team columns are created automatically when the consuming app sets `permission.teams = true`; the same migration runs cleanly with teams disabled. |
 | `create_media_table` | Spatie Media Library schema with ULID morphs |
 | `create_notifications_table` | Standard Laravel notifications table with a ULID morph target |
 
@@ -69,7 +69,7 @@ Installing `haykal-core` pulls in the packages below. Each is configured through
 
 - [`hitaqnia/huwiya-laravel`](https://github.com/hitaqnia/huwiya-laravel) — sole authentication mechanism.
 - [`spatie/laravel-data`](https://spatie.be/docs/laravel-data) — data transfer objects.
-- [`spatie/laravel-permission`](https://spatie.be/docs/laravel-permission) — roles and permissions with teams enabled.
+- [`spatie/laravel-permission`](https://spatie.be/docs/laravel-permission) — roles and permissions. Teams are off by default; enable them per application when roles must scope to the active tenant.
 - [`spatie/laravel-medialibrary`](https://spatie.be/docs/laravel-medialibrary) — file attachments.
 - [`spatie/laravel-translatable`](https://spatie.be/docs/laravel-translatable) — translatable model attributes.
 - [`laravel/horizon`](https://laravel.com/docs/horizon) — queue monitoring.
@@ -137,7 +137,7 @@ In `config/auth.php`, point Laravel's user provider at the Haykal `User` model (
 php artisan vendor:publish --provider="Spatie\Permission\PermissionServiceProvider" --tag=permission-config
 ```
 
-Edit `config/permission.php`:
+Edit `config/permission.php` to point Spatie at Haykal's ULID-keyed models (or at your own subclasses of them):
 
 ```php
 'models' => [
@@ -145,10 +145,16 @@ Edit `config/permission.php`:
     'role'       => \HiTaqnia\Haykal\Core\Identity\Models\Role::class,
 ],
 
-'teams' => true,
+// 'teams' is OFF by default. Enable only when roles must scope per tenant —
+// apps without multi-tenancy should leave it disabled. Flipping this flag
+// after migrations have run requires `migrate:fresh` so the pivot tables
+// pick up the team_id columns.
+'teams' => false,
 ```
 
-Do **not** publish Spatie's permission migration — `haykal-core` ships a ULID-keyed variant that runs automatically.
+Applications that enable teams must also slot the `haykal.permissions.team` middleware after whichever middleware resolves the active tenant — it is a no-op otherwise.
+
+Do **not** publish Spatie's permission migration — `haykal-core` ships a ULID-keyed variant that runs automatically and adapts to the `teams` flag.
 
 ### 4. Publish the Media Library configuration
 
