@@ -3,11 +3,10 @@
     "description": "Haykal Filament foundation: BasePanel, BaseResource, base pages, Huwiya login page, translatable tabs, base theme, curated plugin set.",
     "type": "library",
     "license": "proprietary",
-    "version": "1.0.0-dev",
     "require": {
         "php": "^8.3",
         "filament/filament": "^5.5",
-        "hitaqnia/haykal-core": "@dev",
+        "hitaqnia/haykal-core": "^1.0",
         "illuminate/contracts": "^13.0",
         "illuminate/support": "^13.0",
         "lara-zeus/spatie-translatable": "^2.0"
@@ -24,6 +23,6 @@
             ]
         }
     },
-    "minimum-stability": "dev",
+    "minimum-stability": "stable",
     "prefer-stable": true
 }
