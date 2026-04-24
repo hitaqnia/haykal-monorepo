@@ -7,7 +7,7 @@ namespace HiTaqnia\Haykal\Tests\Core;
 use HiTaqnia\Haykal\Core\HaykalCoreServiceProvider;
 use HiTaqnia\Haykal\Core\Identity\Models\Permission;
 use HiTaqnia\Haykal\Core\Identity\Models\Role;
-use HiTaqnia\Haykal\Core\Identity\Models\User;
+use HiTaqnia\Haykal\Tests\Fixtures\TestHuwiyaUser;
 use Huwiya\HuwiyaServiceProvider;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Orchestra\Testbench\TestCase;
@@ -54,10 +54,12 @@ abstract class CoreTestCase extends TestCase
         $app['config']->set('huwiya.validate_issuer', true);
         $app['config']->set('huwiya.validate_audience', true);
 
-        // Auth: use the haykal User as the default provider model.
-        $app['config']->set('auth.providers.users.model', User::class);
+        // Auth: use the test fixture User as the default provider model.
+        // Real apps point this at their own subclass of BaseHuwiyaUser.
+        $app['config']->set('auth.providers.users.model', TestHuwiyaUser::class);
 
-        // Resolve factory names for the haykal User model.
+        // Prevent Laravel from guessing factory names — fixtures declare
+        // their factory via `newFactory()` directly.
         Factory::guessFactoryNamesUsing(fn (string $modelName) => null);
     }
 

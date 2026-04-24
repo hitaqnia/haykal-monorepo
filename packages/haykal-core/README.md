@@ -2,9 +2,17 @@
 
 The shared kernel for HiTaqnia Laravel applications.
 
-`haykal-core` provides the classes, migrations, and ecosystem wiring that every HiTaqnia project relies on: a typed Result pattern, multi-tenancy primitives, Spatie Media Library path generation, and the canonical `User`, `Role`, `Permission`, and `Tenant` models integrated with the Huwiya Identity Provider.
+`haykal-core` centralizes the cross-project primitives that every hitaqnia Laravel app relies on:
 
-Installing this package replaces Laravel's default authentication scaffolding end-to-end. The sections below describe exactly what is provided, how to configure it, and which Laravel defaults to remove.
+- A typed `Result` pattern for recoverable failures.
+- Multi-tenancy primitives (context resolver, global scope, model trait).
+- A phone number value object with Eloquent cast + validation rule.
+- ULID-keyed Spatie Role/Permission subclasses.
+- Two HTTP middlewares (`haykal.permissions.team`, `haykal.user.locale`).
+- An **abstract `BaseHuwiyaUser`** that pre-wires every override point the Huwiya SDK exposes with the team's default behavior — subclass this in your app, inherit the defaults, override what you need.
+- The matching migrations (users, Spatie permissions, media, notifications).
+
+The Huwiya SDK (`hitaqnia/huwiya-laravel`) ships the auth mechanism; `haykal-core` ships the team's filled-in defaults on top of that mechanism so every new project bootstraps with identical Huwiya behavior.
 
 ---
 
@@ -14,6 +22,7 @@ Installing this package replaces Laravel's default authentication scaffolding en
 - [What this package provides](#what-this-package-provides)
 - [Installation](#installation)
 - [Configuration](#configuration)
+- [Identity model — `BaseHuwiyaUser`](#identity-model--basehuwiyauser)
 - [Usage](#usage)
 - [Customization](#customization)
 - [Testing](#testing)
@@ -37,176 +46,171 @@ Installing this package replaces Laravel's default authentication scaffolding en
 | `HiTaqnia\Haykal\Core\ResultPattern\Result`, `Error` | Typed `Result<T>` outcome and companion `Error` value object. Use in place of exceptions for expected, recoverable failures. |
 | `HiTaqnia\Haykal\Core\Tenancy\Tenancy` | Process-local tenant context resolver. Exposes `setTenantId()`, `getTenantId()`, `clear()`. |
 | `HiTaqnia\Haykal\Core\Tenancy\TenantScope` | Global Eloquent scope that constrains queries to the active tenant. Rows with a `NULL` tenant remain visible as shared records. |
-| `HiTaqnia\Haykal\Core\Tenancy\Models\Tenant` | Abstract base model for application tenants. Concrete tenants (`Complex`, `Organization`, `Workspace`, …) extend this class. |
-| `HiTaqnia\Haykal\Core\Tenancy\Concerns\HasTenant` | Trait that marks an Eloquent model as tenant-owned. Applies `TenantScope`, auto-populates `tenant_id`, and declares the `tenant()` relation. |
+| `HiTaqnia\Haykal\Core\Tenancy\Concerns\HasTenant` | Trait that marks an Eloquent model as tenant-owned. Applies `TenantScope`, auto-populates the tenant FK on creating, and declares the `tenant()` relation. |
 | `HiTaqnia\Haykal\Core\Http\Middlewares\PermissionsTeamMiddleware` | Forwards the active tenant into Spatie's `setPermissionsTeamId()`. Registered under the alias `haykal.permissions.team`. |
 | `HiTaqnia\Haykal\Core\Http\Middlewares\SetUserLocaleMiddleware` | Applies the authenticated user's stored `locale` to the current request. Registered under the alias `haykal.user.locale`. |
-| `HiTaqnia\Haykal\Core\MediaLibrary\CustomPathGenerator` | Spatie Media Library path generator. User-owned media is stored under `identity/<uuid>/`; all other media is stored under `<tenantId>/<uuid>/`. |
-| `HiTaqnia\Haykal\Core\Identity\Models\User` | Authenticatable model. Uses `Huwiya\InteractsWithHuwiya`, Spatie `HasRoles`, Media Library, and soft deletes. Profile fields are synced from Huwiya claims on every login. |
+| `HiTaqnia\Haykal\Core\Identity\Models\BaseHuwiyaUser` | **Abstract** base for the application's User model. Pre-wires Huwiya claim sync + Spatie `HasRoles` + Media Library + soft deletes + ULIDs. Intended to be subclassed. |
 | `HiTaqnia\Haykal\Core\Identity\Models\Role`, `Permission` | Spatie Role and Permission extended with `HasUlids`. |
 | `HiTaqnia\Haykal\Core\Identity\ValueObjects\PhoneNumber` | Iraqi phone number in E.164 canonical form with readable and compact formatters. |
 | `HiTaqnia\Haykal\Core\Identity\Casts\PhoneNumberCast` | Eloquent cast for phone columns. |
-| `HiTaqnia\Haykal\Core\Identity\Rules\PhoneNumberRule` | Validation rule for the input shapes the value object normalizes. |
-| `HiTaqnia\Haykal\Core\Identity\QueryBuilders\UserQueryBuilder` | Adds `wherePhoneNumber()` and `getByPhoneNumber()` to `User::query()`. |
-| `HiTaqnia\Haykal\Core\Database\Factories\UserFactory` | Default factory so `User::factory()->create()` works out of the box. |
+| `HiTaqnia\Haykal\Core\Identity\Rules\PhoneNumberRule` | Validation rule for the input shapes the value object accepts. |
+| `HiTaqnia\Haykal\Core\Identity\QueryBuilders\UserQueryBuilder` | Adds `wherePhoneNumber()` and `getByPhoneNumber()` to `BaseHuwiyaUser::query()` — inherited by every subclass. |
 
 ### Migrations
 
-`haykal-core` ships its own migrations and loads them automatically from the package directory. They may also be published via the tag `haykal-core-migrations` for customization.
+`haykal-core` ships its migrations and loads them automatically from the package directory. Publish with the tag `haykal-core-migrations` if you need to edit them.
 
 | Migration | Tables created |
 |---|---|
-| `create_users_table` | `users` (ULID id, `huwiya_id`, `name`, `phone`, `email`, `locale`, `zoneinfo`, `theme`, soft deletes), `sessions` |
-| `create_permission_tables` | Spatie permission schema with ULID primary keys. The team columns are created automatically when the consuming app sets `permission.teams = true`; the same migration runs cleanly with teams disabled. |
-| `create_media_table` | Spatie Media Library schema with ULID morphs |
-| `create_notifications_table` | Standard Laravel notifications table with a ULID morph target |
+| `create_users_table` | `users` (ULID id, `huwiya_id`, `name`, `phone`, `email`, `locale`, `zoneinfo`, `theme`, soft deletes, remember token, timestamps) + `sessions` |
+| `create_permission_tables` | Spatie permission schema with ULID primary keys. Team columns are created when `permission.teams = true`; the same migration runs cleanly with teams disabled. |
+| `create_media_table` | Spatie Media Library table with ULID morph target. |
+| `create_notifications_table` | Laravel notifications table with ULID morph target. |
 
-The `users` table deliberately omits `password`, `is_admin`, MFA columns, Sanctum tokens, and device tracking — all are handled by the Huwiya Identity Provider.
+Projects that need additional User columns add their own follow-on migrations (`add_xxx_to_users_table`) rather than editing the published base.
 
-### Ecosystem dependencies
+### Ecosystem packages (hard-required)
 
-Installing `haykal-core` pulls in the packages below. Each is configured through its own upstream documentation; `haykal-core` does not wrap their configuration files.
+Installing `haykal-core` pulls in:
 
-- [`hitaqnia/huwiya-laravel`](https://github.com/hitaqnia/huwiya-laravel) — sole authentication mechanism.
-- [`spatie/laravel-data`](https://spatie.be/docs/laravel-data) — data transfer objects.
-- [`spatie/laravel-permission`](https://spatie.be/docs/laravel-permission) — roles and permissions. Teams are off by default; enable them per application when roles must scope to the active tenant.
-- [`spatie/laravel-medialibrary`](https://spatie.be/docs/laravel-medialibrary) — file attachments.
-- [`spatie/laravel-translatable`](https://spatie.be/docs/laravel-translatable) — translatable model attributes.
-- [`laravel/horizon`](https://laravel.com/docs/horizon) — queue monitoring.
-- [`laravel-notification-channels/fcm`](https://github.com/laravel-notification-channels/fcm) — push notifications.
-- [`league/flysystem-aws-s3-v3`](https://flysystem.thephpleague.com/docs/adapter/aws-s3-v3/) + [`predis/predis`](https://github.com/predis/predis).
+- `hitaqnia/huwiya-laravel` — the Huwiya authentication SDK.
+- `spatie/laravel-permission` — used by Role / Permission / `HasRoles`.
+- `spatie/laravel-medialibrary` — used by `InteractsWithMedia` on `BaseHuwiyaUser`.
+- `spatie/laravel-data`, `spatie/laravel-translatable` — used by every hitaqnia project's domain layer; required here so apps get them automatically.
+- `laravel/horizon` — queue monitoring.
+- `league/flysystem-aws-s3-v3` — S3 storage adapter.
+- `predis/predis` — Redis client.
+
+Configuration for every upstream package follows their own published documentation. `haykal-core` does not wrap or re-document them.
 
 ---
 
 ## Installation
 
-Until the suite is published, consume the package via a Composer path repository. In the consuming application's `composer.json`:
-
-```json
-{
-    "repositories": [
-        { "type": "path", "url": "/absolute/path/to/haykal/packages/haykal-core" },
-        { "type": "path", "url": "/absolute/path/to/huwiya/packages/huwiya-laravel" }
-    ],
-    "minimum-stability": "dev",
-    "prefer-stable": true
-}
-```
-
-Then require the package:
-
 ```bash
-composer require hitaqnia/haykal-core:@dev
+composer require hitaqnia/haykal-core
 ```
+
+Auto-discovered via `HaykalCoreServiceProvider`. The provider loads the package's migrations, publishes the migration tag, and registers the two middleware aliases.
 
 ---
 
 ## Configuration
 
-Each step below is required. The order matters: remove conflicting defaults first, then wire up the classes shipped by this package.
+Follow the upstream documentation for each ecosystem package:
 
-### 1. Remove Laravel's conflicting default migration
+- **Huwiya SDK** — set the env variables listed in the SDK's README and register the `huwiya-web` / `huwiya-api` guards in `config/auth.php`.
+- **Spatie permission** — publish the Spatie config, set `models.role` / `models.permission` to haykal's ULID subclasses, and set `teams` to `true` or `false` per app requirements.
+- **Spatie Media Library** — publish its config and configure your disks.
+- **Horizon** — publish and configure per its docs.
 
-Fresh Laravel installations ship a users migration that conflicts with the one provided by `haykal-core`. Delete it before running migrations:
+Then publish the haykal-core migrations and run:
 
 ```bash
-rm database/migrations/0001_01_01_000000_create_users_table.php
+php artisan vendor:publish --tag=haykal-core-migrations
+php artisan migrate
 ```
 
-Retain the remaining Laravel defaults — they do not conflict with anything this package ships:
+---
 
-- `0001_01_01_000001_create_cache_table.php`
-- `0001_01_01_000002_create_jobs_table.php`
+## Identity model — `BaseHuwiyaUser`
 
-### 2. Configure the authentication user provider
+This is where the team's Huwiya defaults live. Subclass it once in your app and you're done.
 
-In `config/auth.php`, point Laravel's user provider at the Haykal `User` model (or at your own subclass of it):
+### Creating your `User`
+
+```php
+namespace Domain\Identity\Models;
+
+use Domain\Identity\Database\Factories\UserFactory;
+use HiTaqnia\Haykal\Core\Identity\Models\BaseHuwiyaUser;
+use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+
+class User extends BaseHuwiyaUser
+{
+    use HasFactory;
+
+    protected static function newFactory(): Factory
+    {
+        return UserFactory::new();
+    }
+
+    // Add relations, observers, scopes, additional fillables, etc.
+}
+```
+
+Point `config/auth.php`'s `users` provider at this class:
 
 ```php
 'providers' => [
     'users' => [
         'driver' => 'eloquent',
-        'model'  => \HiTaqnia\Haykal\Core\Identity\Models\User::class,
+        'model' => env('AUTH_MODEL', Domain\Identity\Models\User::class),
     ],
 ],
 ```
 
-### 3. Publish the Spatie Permission configuration
+### What `BaseHuwiyaUser` pre-wires
 
-```bash
-php artisan vendor:publish --provider="Spatie\Permission\PermissionServiceProvider" --tag=permission-config
-```
+| Concern | Default |
+|---|---|
+| Authentication | Huwiya OAuth / JWT via the SDK's `InteractsWithHuwiya` trait. No local password column, no Sanctum tokens. |
+| Primary key | ULID (`HasUlids`). |
+| Soft deletes | On. |
+| Permissions | Spatie `HasRoles` (use a ULID-keyed `Role` / `Permission` via haykal-core's subclasses). |
+| Media attachments | Spatie Media Library `InteractsWithMedia`. |
+| Fillables | `name`, `phone`, `email`, `locale`, `zoneinfo`, `theme`. (`huwiya_id` is added automatically by the SDK trait.) |
+| Casts | `phone` → `PhoneNumberCast`. |
+| Query builder | `UserQueryBuilder` — `wherePhoneNumber()` / `getByPhoneNumber()` are available on every subclass. |
 
-Edit `config/permission.php` to point Spatie at Haykal's ULID-keyed models (or at your own subclasses of them):
+### Huwiya SDK hook defaults
 
-```php
-'models' => [
-    'permission' => \HiTaqnia\Haykal\Core\Identity\Models\Permission::class,
-    'role'       => \HiTaqnia\Haykal\Core\Identity\Models\Role::class,
-],
+The Huwiya SDK exposes eight policy hooks on `InteractsWithHuwiya`. `BaseHuwiyaUser` fills in sensible team defaults for the claim-sync pair and leaves the rest at the SDK's defaults — override any of them on your subclass to change behavior.
 
-// 'teams' is OFF by default. Enable only when roles must scope per tenant —
-// apps without multi-tenancy should leave it disabled. Flipping this flag
-// after migrations have run requires `migrate:fresh` so the pivot tables
-// pick up the team_id columns.
-'teams' => false,
-```
+| SDK hook | `BaseHuwiyaUser` default | Typical reason to override |
+|---|---|---|
+| `getHuwiyaIdentifierColumn()` | `'huwiya_id'` | Rename the column. |
+| `shouldAutoRegister($claims)` | `true` (SDK default — accept every valid token) | Invite-only apps: check an invitation table. |
+| `newHuwiyaQuery()` | `static::query()` (SDK default) | Apply tenancy scopes, eager loads, include trashed rows. |
+| `huwiyaQueryForClaims($q, $claims)` | match by `huwiya_id` (SDK default) | Fall back to phone/email on first login, multi-tenant lookup. |
+| `getHuwiyaCreateAttributes($claims)` | **Sync** `name`, `phone`, `email`, `locale`, `zoneinfo`, `theme` | Sync a different column set. |
+| `getHuwiyaUpdateAttributes($claims)` | **Same as create** — columns stay in step on every re-login | Skip updates on re-login (return `[]`); freeze certain columns. |
+| `getHuwiyaConflictColumns()` | `['phone', 'email']` (SDK default) | Add/remove recyclable columns. |
+| `resolveHuwiyaConflict(...)` | Throw `HuwiyaConflictException` (SDK default) | Phone/email recycling: null the old row's column, soft-delete the old user, transfer ownership, etc. |
 
-Applications that enable teams must also slot the `haykal.permissions.team` middleware after whichever middleware resolves the active tenant — it is a no-op otherwise.
-
-Do **not** publish Spatie's permission migration — `haykal-core` ships a ULID-keyed variant that runs automatically and adapts to the `teams` flag.
-
-### 4. Publish the Media Library configuration
-
-```bash
-php artisan vendor:publish --provider="Spatie\MediaLibrary\MediaLibraryServiceProvider" --tag=medialibrary-config
-```
-
-Edit `config/media-library.php`:
+Example — invite-only app with email recycling:
 
 ```php
-'path_generator' => \HiTaqnia\Haykal\Core\MediaLibrary\CustomPathGenerator::class,
+use Huwiya\TokenClaims;
+use HiTaqnia\Haykal\Core\Identity\Models\BaseHuwiyaUser;
+
+class User extends BaseHuwiyaUser
+{
+    public function shouldAutoRegister(?TokenClaims $claims = null): bool
+    {
+        return $claims !== null && Invitation::query()
+            ->where('email', $claims->email)
+            ->whereNull('accepted_at')
+            ->exists();
+    }
+
+    public function resolveHuwiyaConflict(
+        TokenClaims $claims,
+        self $existingRow,
+        string $conflictingColumn,
+    ): void {
+        // Old user keeps their account but loses the recycled contact.
+        $existingRow->update([$conflictingColumn => null]);
+    }
+}
 ```
 
-Do **not** publish Spatie Media Library's migration — `haykal-core` ships a ULID-morph variant that runs automatically.
+### Why abstract
 
-### 5. Configure the Huwiya SDK
+`BaseHuwiyaUser` is abstract to force explicit ownership of the concrete User class in the consuming app. The application — not the package — names its auth model, wires its factory, and adds its relations. The package's job is to centralize the shared skeleton so every project starts from the same place.
 
-Follow the [`huwiya-laravel` documentation](https://github.com/hitaqnia/huwiya-laravel) to publish its configuration and set the required environment variables:
-
-```
-HUWIYA_URL=https://idp.example.com
-HUWIYA_PROJECT_ID=your-project-id
-HUWIYA_CLIENT_ID=...
-HUWIYA_CLIENT_SECRET=...
-HUWIYA_REDIRECT_URI=https://your-app.example.com/huwiya/callback
-```
-
-Register the Huwiya guard drivers in `config/auth.php` as documented by the SDK (`huwiya-web` for session-based panels, `huwiya-api` for stateless APIs).
-
-### 6. Wire the Haykal middlewares
-
-In `bootstrap/app.php`, append the middlewares shipped by this package to the appropriate groups. The permissions-team middleware must run **after** whichever middleware resolves the active tenant.
-
-```php
-->withMiddleware(function (Middleware $middleware) {
-    $middleware->appendToGroup('web', [
-        'haykal.permissions.team',
-        'haykal.user.locale',
-    ]);
-
-    $middleware->appendToGroup('api', [
-        'haykal.permissions.team',
-        'haykal.user.locale',
-    ]);
-})
-```
-
-### 7. Run migrations
-
-```bash
-php artisan migrate
-```
+When a future auth mode is needed (say, username/password without Huwiya), a parallel `BasePasswordUser` class ships alongside. Projects pick the base that matches; existing projects pinned to `BaseHuwiyaUser` are untouched.
 
 ---
 
@@ -218,193 +222,109 @@ php artisan migrate
 use HiTaqnia\Haykal\Core\ResultPattern\Error;
 use HiTaqnia\Haykal\Core\ResultPattern\Result;
 
-return $user !== null
-    ? Result::success($user)
-    : Result::failure(Error::make(code: 404, message: 'User not found.'));
+$result = Result::success($user);
+// or
+$result = Result::failure(Error::make(code: 4001, message: 'Booking overlap.'));
+
+if ($result->isSuccess()) {
+    $user = $result->getData();
+} else {
+    $error = $result->getError();
+}
 ```
 
 ### Tenancy
 
-Set the active tenant early in the request lifecycle via a middleware that resolves it from a Filament panel, subdomain, header, or route parameter:
-
 ```php
+use HiTaqnia\Haykal\Core\Tenancy\Concerns\HasTenant;
 use HiTaqnia\Haykal\Core\Tenancy\Tenancy;
 
-Tenancy::setTenantId($tenant->getKey());
-```
+Tenancy::setTenantId($complex->id);
 
-Define the application's concrete tenant model by extending the Haykal base class:
+// Query scopes automatically filter to the active tenant.
+Property::query()->get();
 
-```php
-use HiTaqnia\Haykal\Core\Tenancy\Models\Tenant;
-
-class Complex extends Tenant
-{
-    // Application-specific columns, relations, and accessors.
-}
-```
-
-Mark tenant-owned models with the `HasTenant` trait:
-
-```php
-use HiTaqnia\Haykal\Core\Tenancy\Concerns\HasTenant;
-use Illuminate\Database\Eloquent\Model;
-
-class Unit extends Model
-{
-    use HasTenant;
-
-    protected string $tenantModel = Complex::class;
-}
-```
-
-The trait applies `TenantScope` as a global scope, fills the tenant foreign key automatically on creation when a tenant is active, and exposes a `tenant()` relation targeting the class named in `$tenantModel`. Rows whose tenant FK is `NULL` remain visible across all tenants.
-
-#### Multiple tenant types
-
-Applications that expose several tenant types (for example, **Agency** and **Development Company**, each with its own table, relations, and foreign key column) extend `Tenant` once per type. Only one tenant type is active per panel or request — Haykal does not maintain a keyed map of active tenants — so every component treats "the active tenant" as a single value.
-
-Each tenanted model declares both its concrete tenant class and its foreign key column:
-
-```php
-use HiTaqnia\Haykal\Core\Tenancy\Concerns\HasTenant;
-use HiTaqnia\Haykal\Core\Tenancy\Models\Tenant;
-
-class Agency extends Tenant {}
-class DevelopmentCompany extends Tenant {}
-
+// Tenant-owned models declare their tenant relation + FK.
 class Property extends Model
 {
     use HasTenant;
 
-    protected string $tenantModel = Agency::class;
-    protected string $tenantForeignKey = 'agency_id';
-}
-
-class Project extends Model
-{
-    use HasTenant;
-
-    protected string $tenantModel = DevelopmentCompany::class;
-    protected string $tenantForeignKey = 'developer_id';
+    protected string $tenantModel = Complex::class;
+    protected string $tenantForeignKey = 'complex_id';
 }
 ```
-
-The scope reads `$tenantForeignKey` per model, so queries for `Property` filter on `agency_id` and queries for `Project` filter on `developer_id`, each against the single active tenant id set by the request's middleware. Models that omit the property fall back to the package-wide default (`tenant_id`).
-
-The Filament counterpart of this pattern is one panel per tenant type — see `haykal-filament`'s README for how each panel wires its own tenant model.
-
-### Huwiya claim synchronization
-
-The default `User` model syncs the following columns from `TokenClaims` on both account creation and every re-login:
-
-- `name`, `phone`, `email`
-- `locale`, `zoneinfo`, `theme`
-
-To customize the mapping, override `attributesFromClaims(TokenClaims $claims): array` on a `User` subclass. A single method governs both the create and update behavior so they cannot drift apart.
 
 ### Phone numbers
 
 ```php
+use HiTaqnia\Haykal\Core\Identity\Rules\PhoneNumberRule;
 use HiTaqnia\Haykal\Core\Identity\ValueObjects\PhoneNumber;
 
 $phone = new PhoneNumber('07701234567');
-$phone->getInternational();                  // +9647701234567
-$phone->getInternational(readable: true);    // +964 770 123 4567
-$phone->getNational();                       // 07701234567
+$phone->getInternational();           // "+9647701234567"
+$phone->getInternational(readable: true); // "+964 770 123 4567"
+$phone->getNational();                // "07701234567"
+
+// Validation rule
+'phone' => ['required', new PhoneNumberRule],
 ```
 
-Accepts `+964…`, `00964…`, `0…`, and bare `7XXXXXXXXX` inputs.
+The phone column on `BaseHuwiyaUser` is cast to `PhoneNumber` automatically — reading `$user->phone` returns the value object; writing accepts a string or VO.
 
-### User query helpers
+### Middlewares
+
+Assign in `bootstrap/app.php`:
 
 ```php
-User::query()->wherePhoneNumber('07701234567')->first();
-User::query()->getByPhoneNumber('+9647701234567');
+use HiTaqnia\Haykal\Core\Http\Middlewares\PermissionsTeamMiddleware;
+use HiTaqnia\Haykal\Core\Http\Middlewares\SetUserLocaleMiddleware;
+
+return Application::configure(basePath: dirname(__DIR__))
+    ->withMiddleware(function (Middleware $middleware) {
+        $middleware->appendToGroup('web', [SetUserLocaleMiddleware::class]);
+        $middleware->appendToGroup('api', [SetUserLocaleMiddleware::class]);
+
+        // After your tenancy resolver:
+        $middleware->appendToGroup('web', [PermissionsTeamMiddleware::class]);
+    })
+    ->create();
 ```
 
-### Factories
-
-```php
-use HiTaqnia\Haykal\Core\Identity\Models\User;
-
-$user = User::factory()->create();
-$user = User::factory()->withoutHuwiya()->create();
-$user = User::factory()->create(['locale' => 'ar']);
-```
+Or via the aliases `haykal.user.locale` and `haykal.permissions.team`.
 
 ---
 
 ## Customization
 
-Every customization point exposed by `haykal-core` itself is listed below. Knobs belonging to upstream packages (Spatie, Huwiya, Horizon, …) are configured through their own published configuration files.
-
-### Model substitution
-
-Apps may substitute any of the shipped Eloquent models with a subclass:
-
-| Model | Where to substitute |
-|---|---|
-| `User` | `config/auth.php` — `providers.users.model` |
-| `Role` | `config/permission.php` — `models.role` |
-| `Permission` | `config/permission.php` — `models.permission` |
-| `Tenant` | Apps extend `...\Tenancy\Models\Tenant` directly and reference the concrete subclass from their `HasTenant`-using models |
-
-### Override points on the `User` model
-
-| Method | Purpose |
-|---|---|
-| `attributesFromClaims(TokenClaims): array` | Columns synced from Huwiya claims on create and update. |
-| `shouldAutoRegister(?TokenClaims): bool` | Return `false` for invite-only applications. |
-| `resolveHuwiyaConflict(TokenClaims, self, string)` | Policy applied on unique-constraint violations (for example, phone or email recycling). |
-| `newHuwiyaQuery()` and `huwiyaQueryForClaims()` | Control how users are located from claims — override to apply tenant scopes, eager-load relations, or accept alternative lookup columns. |
-| `getHuwiyaIdentifierColumn(): string` | Column that stores the Huwiya subject identifier. Defaults to `huwiya_id`. |
-
-### Override points on `HasTenant`
-
-| Method / property | Purpose |
-|---|---|
-| `protected string $tenantModel` | The concrete Tenant class the model belongs to. |
-| `protected string $tenantForeignKey` | The foreign key column on this model. Defaults to `tenant_id`; override per-model in multi-tenant-type apps (for example `agency_id`, `developer_id`). |
-| `tenantRelationModel(): string` | Overridable for dynamic resolution (for example, reading from configuration). |
-| `getTenantForeignKey(): string` | Overridable for dynamic FK resolution. Default reads the `$tenantForeignKey` property. |
-
-### Override points on `CustomPathGenerator`
-
-Extend the generator and override the protected `getBasePath(Media): string` to add application-specific special cases (for example, filing content owned by a domain root model under its own path prefix).
-
-### Middleware aliases
-
-`haykal-core` registers two route-middleware aliases. Apps compose them into whichever middleware groups they need.
-
-| Alias | Middleware |
-|---|---|
-| `haykal.permissions.team` | `PermissionsTeamMiddleware` |
-| `haykal.user.locale` | `SetUserLocaleMiddleware` |
-
 ### Publishable resources
 
 | Tag | Contents |
 |---|---|
-| `haykal-core-migrations` | The package's migration files. Publish only when the schema needs application-specific changes. |
+| `haykal-core-migrations` | The four package migrations. |
 
-### Fixed conventions
+### Overriding migrations
 
-The values below are hardcoded and not exposed through configuration. They can be changed by forking or extending the relevant class when a concrete use case emerges.
+Publish, edit, and re-run:
 
-| Convention | Current value | Location |
-|---|---|---|
-| Default tenant foreign key column | `tenant_id` | `TenantScope::FOREIGN_KEY` (per-model overridable via `HasTenant`'s `$tenantForeignKey`) |
-| Phone number country scope | Iraq (E.164 `+964…`) | `PhoneNumber::INPUT_REGEX` |
+```bash
+php artisan vendor:publish --tag=haykal-core-migrations --force
+php artisan migrate:fresh
+```
+
+The package's own migration copies continue to load via `loadMigrationsFrom` — so publishing is only needed when you want to customize. If you do publish, disable the package-loaded copy to prevent duplicate runs. (See Laravel's migration docs for this pattern.)
+
+### Custom tenant foreign key per model
+
+Declare `$tenantForeignKey` per model — `HasTenant` reads it through `getTenantForeignKey()`. Useful when different models belong to different tenant types (`agency_id` on `properties`, `developer_id` on `projects`).
 
 ---
 
 ## Testing
 
-Run the monorepo test suite from the repository root:
+The monorepo ships `HiTaqnia\Haykal\Tests\Core\CoreTestCase` (Testbench-backed) and a `TestHuwiyaUser` / `TestHuwiyaUserFactory` fixture pair for exercising the abstract base. Consuming applications point their `auth.providers.users.model` at their own concrete `User` and run their own factories.
+
+Run the monorepo suite:
 
 ```bash
 composer test
 ```
-
-Tests use Orchestra Testbench with an in-memory SQLite database. The `FakeHuwiyaIdP` fixture (in the monorepo's `tests/Fixtures/`) issues RS256-signed JWTs that the real Huwiya SDK accepts, enabling end-to-end authentication flows without a live Identity Provider.

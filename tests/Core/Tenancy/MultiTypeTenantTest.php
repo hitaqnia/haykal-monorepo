@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace HiTaqnia\Haykal\Tests\Core\Tenancy;
 
 use HiTaqnia\Haykal\Core\Tenancy\Concerns\HasTenant;
-use HiTaqnia\Haykal\Core\Tenancy\Models\Tenant;
 use HiTaqnia\Haykal\Core\Tenancy\Tenancy;
 use HiTaqnia\Haykal\Tests\Core\CoreTestCase;
+use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
@@ -16,17 +17,27 @@ use Illuminate\Support\Facades\Schema;
 /**
  * Agency tenant — fixture for multi-type tenancy tests.
  */
-class Agency extends Tenant
+class Agency extends Model
 {
+    use HasUlids;
+    use SoftDeletes;
+
     protected $table = 'agencies';
+
+    protected $guarded = [];
 }
 
 /**
  * Development company tenant — fixture for multi-type tenancy tests.
  */
-class DevelopmentCompany extends Tenant
+class DevelopmentCompany extends Model
 {
+    use HasUlids;
+    use SoftDeletes;
+
     protected $table = 'development_companies';
+
+    protected $guarded = [];
 }
 
 /**

@@ -16,7 +16,6 @@ use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Enums\Width;
 use HiTaqnia\Haykal\Core\Http\Middlewares\PermissionsTeamMiddleware;
-use HiTaqnia\Haykal\Core\Tenancy\Models\Tenant;
 use HiTaqnia\Haykal\Filament\Auth\HuwiyaRedirectLogin;
 use HiTaqnia\Haykal\Filament\Http\Middlewares\AccessCheckingMiddleware;
 use HiTaqnia\Haykal\Filament\Http\Middlewares\FilamentTenancyMiddleware;
@@ -142,8 +141,8 @@ abstract class BasePanel extends PanelProvider
 
     /**
      * Concrete tenant model for this panel, or `null` for tenant-less
-     * panels (e.g., super-admin). Typically a subclass of
-     * {@see Tenant}.
+     * panels (e.g., super-admin). Must be an Eloquent model with a ULID
+     * primary key; the application owns its shape and migrations.
      *
      * @return class-string<Model>|null
      */

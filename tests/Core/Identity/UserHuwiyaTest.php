@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace HiTaqnia\Haykal\Tests\Core\Identity;
 
 use HiTaqnia\Haykal\Core\Identity\Models\Role;
-use HiTaqnia\Haykal\Core\Identity\Models\User;
 use HiTaqnia\Haykal\Tests\Core\CoreTestCase;
+use HiTaqnia\Haykal\Tests\Fixtures\TestHuwiyaUser;
 use Huwiya\TokenClaims;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -26,7 +26,7 @@ final class UserHuwiyaTest extends CoreTestCase
             'theme' => 'dark',
         ]);
 
-        $user = User::findOrCreateFromHuwiya($claims);
+        $user = TestHuwiyaUser::findOrCreateFromHuwiya($claims);
 
         $this->assertTrue($user->exists);
         $this->assertSame('01HX0000000000000000000042', $user->huwiya_id);
@@ -41,11 +41,11 @@ final class UserHuwiyaTest extends CoreTestCase
     {
         $claims = $this->claims(['id' => '01HX0000000000000000000042']);
 
-        $firstUser = User::findOrCreateFromHuwiya($claims);
-        $secondUser = User::findOrCreateFromHuwiya($claims);
+        $firstUser = TestHuwiyaUser::findOrCreateFromHuwiya($claims);
+        $secondUser = TestHuwiyaUser::findOrCreateFromHuwiya($claims);
 
         $this->assertSame($firstUser->getKey(), $secondUser->getKey());
-        $this->assertSame(1, User::count());
+        $this->assertSame(1, TestHuwiyaUser::count());
     }
 
     public function test_update_attributes_from_claims_overwrite_all_synced_fields_on_relogin(): void
@@ -59,7 +59,7 @@ final class UserHuwiyaTest extends CoreTestCase
             'theme' => 'light',
         ]);
 
-        User::findOrCreateFromHuwiya($initial);
+        TestHuwiyaUser::findOrCreateFromHuwiya($initial);
 
         $updated = $this->claims([
             'id' => '01HX0000000000000000000042',
@@ -70,7 +70,7 @@ final class UserHuwiyaTest extends CoreTestCase
             'theme' => 'dark',
         ]);
 
-        $fresh = User::findOrCreateFromHuwiya($updated)->fresh();
+        $fresh = TestHuwiyaUser::findOrCreateFromHuwiya($updated)->fresh();
 
         $this->assertSame('New Name', $fresh->name);
         $this->assertSame('ar', $fresh->locale);
@@ -88,7 +88,7 @@ final class UserHuwiyaTest extends CoreTestCase
             'guard_name' => 'web',
             'team_id' => $tenantId,
         ]);
-        $user = User::findOrCreateFromHuwiya($this->claims(['id' => '01HX0000000000000000000042']));
+        $user = TestHuwiyaUser::findOrCreateFromHuwiya($this->claims(['id' => '01HX0000000000000000000042']));
 
         $user->assignRole($role);
 

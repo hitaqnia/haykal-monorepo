@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace HiTaqnia\Haykal\Tests\Core\Http;
 
 use HiTaqnia\Haykal\Core\Http\Middlewares\SetUserLocaleMiddleware;
-use HiTaqnia\Haykal\Core\Identity\Models\User;
 use HiTaqnia\Haykal\Tests\Core\CoreTestCase;
+use HiTaqnia\Haykal\Tests\Fixtures\TestHuwiyaUser;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -28,7 +28,7 @@ final class SetUserLocaleMiddlewareTest extends CoreTestCase
     {
         app()->setLocale('en');
 
-        $user = User::factory()->create(['locale' => 'ar']);
+        $user = TestHuwiyaUser::factory()->create(['locale' => 'ar']);
 
         $request = Request::create('/');
         $request->setUserResolver(fn () => $user);
@@ -42,7 +42,7 @@ final class SetUserLocaleMiddlewareTest extends CoreTestCase
     {
         app()->setLocale('en');
 
-        $user = User::factory()->create(['locale' => '']);
+        $user = TestHuwiyaUser::factory()->create(['locale' => '']);
 
         $request = Request::create('/');
         $request->setUserResolver(fn () => $user);

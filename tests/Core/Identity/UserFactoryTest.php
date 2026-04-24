@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace HiTaqnia\Haykal\Tests\Core\Identity;
 
-use HiTaqnia\Haykal\Core\Identity\Models\User;
 use HiTaqnia\Haykal\Tests\Core\CoreTestCase;
+use HiTaqnia\Haykal\Tests\Fixtures\TestHuwiyaUser;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 
@@ -15,7 +15,7 @@ final class UserFactoryTest extends CoreTestCase
 
     public function test_factory_creates_a_persisted_user_with_all_synced_columns_populated(): void
     {
-        $user = User::factory()->create();
+        $user = TestHuwiyaUser::factory()->create();
 
         $this->assertTrue($user->exists);
         $this->assertNotEmpty($user->name);
@@ -25,7 +25,7 @@ final class UserFactoryTest extends CoreTestCase
 
     public function test_factory_generates_a_huwiya_id_ulid_by_default(): void
     {
-        $user = User::factory()->create();
+        $user = TestHuwiyaUser::factory()->create();
 
         $this->assertNotNull($user->huwiya_id);
         $this->assertTrue(Str::isUlid($user->huwiya_id));
@@ -33,14 +33,14 @@ final class UserFactoryTest extends CoreTestCase
 
     public function test_without_huwiya_state_creates_a_user_without_a_huwiya_identifier(): void
     {
-        $user = User::factory()->withoutHuwiya()->create();
+        $user = TestHuwiyaUser::factory()->withoutHuwiya()->create();
 
         $this->assertNull($user->huwiya_id);
     }
 
     public function test_factory_accepts_overrides(): void
     {
-        $user = User::factory()->create([
+        $user = TestHuwiyaUser::factory()->create([
             'name' => 'Fixed Name',
             'locale' => 'ar',
         ]);

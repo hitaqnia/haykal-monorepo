@@ -16,8 +16,8 @@ use Filament\Widgets\WidgetsServiceProvider;
 use HiTaqnia\Haykal\Core\HaykalCoreServiceProvider;
 use HiTaqnia\Haykal\Core\Identity\Models\Permission;
 use HiTaqnia\Haykal\Core\Identity\Models\Role;
-use HiTaqnia\Haykal\Core\Identity\Models\User;
 use HiTaqnia\Haykal\Filament\HaykalFilamentServiceProvider;
+use HiTaqnia\Haykal\Tests\Fixtures\TestHuwiyaUser;
 use Huwiya\HuwiyaServiceProvider;
 use LaraZeus\SpatieTranslatable\SpatieTranslatableServiceProvider;
 use Livewire\LivewireServiceProvider;
@@ -69,7 +69,7 @@ abstract class FilamentTestCase extends TestCase
         $app['config']->set('huwiya.url', 'https://huwiya.test');
         $app['config']->set('huwiya.project_id', 'test-project');
 
-        $app['config']->set('auth.providers.users.model', User::class);
+        $app['config']->set('auth.providers.users.model', TestHuwiyaUser::class);
         $app['config']->set('auth.guards.web', [
             'driver' => 'huwiya-web',
             'provider' => 'users',

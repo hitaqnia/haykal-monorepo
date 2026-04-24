@@ -2,18 +2,17 @@
 
 declare(strict_types=1);
 
-namespace HiTaqnia\Haykal\Core\Database\Factories;
+namespace HiTaqnia\Haykal\Tests\Fixtures;
 
-use HiTaqnia\Haykal\Core\Identity\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
 /**
- * @extends Factory<User>
+ * @extends Factory<TestHuwiyaUser>
  */
-class UserFactory extends Factory
+final class TestHuwiyaUserFactory extends Factory
 {
-    protected $model = User::class;
+    protected $model = TestHuwiyaUser::class;
 
     public function definition(): array
     {

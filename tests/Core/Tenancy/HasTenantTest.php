@@ -5,18 +5,24 @@ declare(strict_types=1);
 namespace HiTaqnia\Haykal\Tests\Core\Tenancy;
 
 use HiTaqnia\Haykal\Core\Tenancy\Concerns\HasTenant;
-use HiTaqnia\Haykal\Core\Tenancy\Models\Tenant;
 use HiTaqnia\Haykal\Core\Tenancy\Tenancy;
 use HiTaqnia\Haykal\Tests\Core\CoreTestCase;
+use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
 use RuntimeException;
 
-class ExampleTenant extends Tenant
+class ExampleTenant extends Model
 {
+    use HasUlids;
+    use SoftDeletes;
+
     protected $table = 'example_tenants';
+
+    protected $guarded = [];
 }
 
 class TenantOwnedItem extends Model

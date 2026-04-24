@@ -9,7 +9,7 @@ use HiTaqnia\Haykal\Api\HaykalApiServiceProvider;
 use HiTaqnia\Haykal\Core\HaykalCoreServiceProvider;
 use HiTaqnia\Haykal\Core\Identity\Models\Permission;
 use HiTaqnia\Haykal\Core\Identity\Models\Role;
-use HiTaqnia\Haykal\Core\Identity\Models\User;
+use HiTaqnia\Haykal\Tests\Fixtures\TestHuwiyaUser;
 use Huwiya\Facades\Huwiya;
 use Huwiya\HuwiyaServiceProvider;
 use Illuminate\Contracts\Auth\Authenticatable;
@@ -59,7 +59,7 @@ abstract class ApiTestCase extends TestCase
         $app['config']->set('huwiya.validate_issuer', true);
         $app['config']->set('huwiya.validate_audience', true);
 
-        $app['config']->set('auth.providers.users.model', User::class);
+        $app['config']->set('auth.providers.users.model', TestHuwiyaUser::class);
 
         // Register both Huwiya-driven guards the suite exercises.
         $app['config']->set('auth.guards.web', [
