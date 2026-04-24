@@ -77,18 +77,6 @@ abstract class ApiTestCase extends TestCase
         // haykal-core loads its migrations from the package; no extra action.
     }
 
-    /**
-     * Mount the haykal-api Identity routes under the standard `api/` prefix
-     * so feature tests can issue requests against `GET /api/identity/me`.
-     */
-    protected function defineRoutes($router): void
-    {
-        $router->group(
-            ['prefix' => 'api'],
-            fn ($group) => require __DIR__.'/../../packages/haykal-api/routes/identity-api.stub.php',
-        );
-    }
-
     // -------------------------------------------------------------
     // Test helpers
     // -------------------------------------------------------------

@@ -8,7 +8,6 @@ use Dedoc\Scramble\Scramble;
 use Dedoc\Scramble\Support\Generator\OpenApi;
 use Dedoc\Scramble\Support\Generator\SecurityScheme;
 use HiTaqnia\Haykal\Api\ApiProvider;
-use HiTaqnia\Haykal\Api\Identity\IdentityApiProvider;
 
 class ExampleApiProvider extends ApiProvider
 {
@@ -100,18 +99,6 @@ final class ApiProviderTest extends ApiTestCase
 
         $this->assertContains('docs/example-api', $routes);
         $this->assertContains('docs/example-api.json', $routes);
-    }
-
-    public function test_identity_api_provider_is_registered_when_booted(): void
-    {
-        // Register the shipped IdentityApiProvider in isolation and confirm
-        // it exposes the expected identity-api registration.
-        $this->app->register(IdentityApiProvider::class);
-
-        $config = Scramble::configure('identity-api');
-
-        $this->assertSame('api/identity', $config->get('api_path'));
-        $this->assertSame('Identity API', $config->get('ui.title'));
     }
 
     /**

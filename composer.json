@@ -5,10 +5,10 @@
     "license": "proprietary",
     "require": {
         "php": "^8.3",
-        "hitaqnia/haykal-core": "@dev",
-        "hitaqnia/haykal-api": "@dev",
-        "hitaqnia/haykal-filament": "@dev",
-        "hitaqnia/haykal": "@dev"
+        "hitaqnia/haykal-core": "^1.0",
+        "hitaqnia/haykal-api": "^1.0",
+        "hitaqnia/haykal-filament": "^1.0",
+        "hitaqnia/haykal": "^1.0"
     },
     "require-dev": {
         "laravel/pint": "^1.23",
@@ -25,32 +25,44 @@
             "type": "path",
             "url": "packages/haykal-core",
             "options": {
-                "symlink": true
+                "symlink": true,
+                "versions": {
+                    "hitaqnia/haykal-core": "1.0.0"
+                }
             }
         },
         {
             "type": "path",
             "url": "packages/haykal-api",
             "options": {
-                "symlink": true
+                "symlink": true,
+                "versions": {
+                    "hitaqnia/haykal-api": "1.0.0"
+                }
             }
         },
         {
             "type": "path",
             "url": "packages/haykal-filament",
             "options": {
-                "symlink": true
+                "symlink": true,
+                "versions": {
+                    "hitaqnia/haykal-filament": "1.0.0"
+                }
             }
         },
         {
             "type": "path",
             "url": "packages/haykal",
             "options": {
-                "symlink": true
+                "symlink": true,
+                "versions": {
+                    "hitaqnia/haykal": "1.0.0"
+                }
             }
         }
     ],
-    "minimum-stability": "dev",
+    "minimum-stability": "stable",
     "prefer-stable": true,
     "config": {
         "allow-plugins": {
