@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace HiTaqnia\Haykal\Tests\Core\Identity;
 
-use HiTaqnia\Haykal\Core\Identity\Models\Role;
 use HiTaqnia\Haykal\Tests\Core\CoreTestCase;
 use HiTaqnia\Haykal\Tests\Fixtures\TestHuwiyaUser;
+use HiTaqnia\Haykal\Tests\Fixtures\TestRole;
 use Huwiya\TokenClaims;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -83,7 +83,7 @@ final class UserHuwiyaTest extends CoreTestCase
         $tenantId = '01HX0000000000000000000099';
         setPermissionsTeamId($tenantId);
 
-        $role = Role::create([
+        $role = TestRole::create([
             'name' => 'member',
             'guard_name' => 'web',
             'team_id' => $tenantId,

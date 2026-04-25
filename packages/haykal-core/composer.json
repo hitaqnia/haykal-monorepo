@@ -1,21 +1,14 @@
 {
     "name": "hitaqnia/haykal-core",
-    "description": "Haykal shared kernel: Result pattern, tenancy, domain concerns, Identity domain (User + Huwiya integration).",
+    "description": "Haykal shared utilities: Result pattern, tenancy primitives, phone-number value object, and two HTTP middlewares (user-locale + Spatie permissions-team bridge).",
     "type": "library",
     "license": "proprietary",
     "require": {
         "php": "^8.3",
-        "hitaqnia/huwiya-laravel": "^1.0",
         "illuminate/contracts": "^13.0",
         "illuminate/database": "^13.0",
         "illuminate/support": "^13.0",
-        "laravel/horizon": "^5.43",
-        "league/flysystem-aws-s3-v3": "^3.29",
-        "predis/predis": "^3.0",
-        "spatie/laravel-data": "^4.17",
-        "spatie/laravel-medialibrary": "^11.15",
-        "spatie/laravel-permission": "^6.21",
-        "spatie/laravel-translatable": "^6.11"
+        "spatie/laravel-permission": "^6.21"
     },
     "autoload": {
         "psr-4": {

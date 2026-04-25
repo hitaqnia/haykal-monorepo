@@ -2,9 +2,9 @@
 
 HiTaqnia's internal Laravel boilerplate package suite.
 
-Haykal consolidates the shared layer that every HiTaqnia Laravel project uses — API response scaffolding, Filament base classes, Identity model integration with the Huwiya IdP, tenancy utilities, domain concerns — into a maintained, versioned set of Composer packages under the `hitaqnia/` vendor namespace.
+Haykal is a set of **utility packages** shared across every HiTaqnia Laravel project — API response scaffolding, Filament base classes, tenancy primitives, phone-number VO, Result pattern, permissions-team middleware. Domain code, identity models, and migrations live in the consuming application, not in these packages.
 
-New projects bootstrap from [`hitaqnia/haykal-starter`](https://github.com/hitaqnia/haykal-starter), which installs the `hitaqnia/haykal` metapackage and wires up a Laravel 13 app with Huwiya auth, a Filament-ready base, and the shared Haykal middleware stack.
+New projects bootstrap from [`hitaqnia/haykal-starter`](https://github.com/hitaqnia/haykal-starter), which installs the `hitaqnia/haykal` metapackage on top of a Laravel 13 skeleton and ships the canonical hitaqnia User / Role / Permission models, the four migrations (users, Spatie permission tables, media, notifications), and the Huwiya auth wiring — all of which the application owns and edits directly.
 
 ## Layout
 
@@ -13,12 +13,10 @@ haykal-monorepo/
 ├── composer.json                Monorepo root: path repositories + shared dev tooling.
 ├── Makefile                     Local dev commands (test, format, install).
 ├── packages/
-│   ├── haykal-core/             hitaqnia/haykal-core — shared kernel (Result, tenancy, Identity, middlewares, migrations).
+│   ├── haykal-core/             hitaqnia/haykal-core — utilities (Result pattern, tenancy, PhoneNumber VO + cast + rule, permissions-team middleware).
 │   ├── haykal-api/              hitaqnia/haykal-api — API response envelope, Scramble extensions, ApiProvider base.
 │   ├── haykal-filament/         hitaqnia/haykal-filament — Filament foundation (BasePanel, BaseResource, base theme, Mapbox + ViewerJS components).
 │   └── haykal/                  hitaqnia/haykal — metapackage (api + filament).
-├── scripts/
-│   └── bootstrap-smoke.sh       Spin up a throwaway Laravel app for end-to-end validation.
 ├── tests/
 │   ├── Core/                    haykal-core tests.
 │   ├── Api/                     haykal-api tests.
@@ -31,19 +29,21 @@ haykal-monorepo/
 
 ## Dependencies between packages
 
-- `haykal-core` is the kernel. Every other haykal package depends on it.
+- `haykal-core` is the utility root. Every other haykal package depends on it.
 - `haykal-api` depends on `haykal-core`.
 - `haykal-filament` depends on `haykal-core`.
 - `haykal` (metapackage) depends on `haykal-api` + `haykal-filament`.
 
-`haykal-core` hard-requires the common ecosystem packages (Spatie permission / medialibrary / translatable / data, Huwiya SDK, Horizon, FCM, flysystem-s3, predis) so consuming apps get the full hitaqnia stack with a single `composer require hitaqnia/haykal`.
+`haykal-core` has exactly one hard dep beyond Illuminate: `spatie/laravel-permission` (required by `PermissionsTeamMiddleware`). Heavy ecosystem packages — Huwiya SDK, Spatie media-library / translatable / data, Horizon, Flysystem-S3, Predis — are pulled in by the **consuming application**, typically via `hitaqnia/haykal-starter`.
 
 ## Scope of each package
 
-- **`haykal-core`** ships code every hitaqnia app needs: the Result pattern, tenancy scopes, base User / Role / Permission models with `InteractsWithHuwiya`, the Huwiya claim → locale middleware, the Media Library path generator, and the published users / permissions / media / notifications migrations.
-- **`haykal-api`** is a pure **utility layer**. It gives every API project the same response envelope, exception-to-envelope translation, and Scramble plumbing, plus an abstract `ApiProvider` to subclass per API module. It ships no endpoints, no controllers, no routes, no concrete providers.
+- **`haykal-core`** is a pure utility package: the Result pattern, tenancy primitives, the Iraqi phone-number VO + Eloquent cast + validation rule, and the `haykal.permissions.team` HTTP middleware. Ships no models, no migrations, no auth scaffolding.
+- **`haykal-api`** is a utility layer. Same response envelope, exception-to-envelope translation, and Scramble plumbing across every API project, plus an abstract `ApiProvider` to subclass per API module. Ships no endpoints, no controllers, no routes, no concrete providers.
 - **`haykal-filament`** ships the Filament foundation: `BasePanel`, `BaseResource`, base list/create/edit pages, the Huwiya-aware login redirect, the translatable tabs component, the access-checking middleware, the base theme, and the Mapbox + ViewerJS Filament components.
 - **`haykal`** is a metapackage that installs `haykal-api` + `haykal-filament` for full-stack projects.
+
+Auth models (User + Role + Permission), migrations, and factories live in the consuming app — see `hitaqnia/haykal-starter` for the canonical hitaqnia wiring.
 
 ## Authentication
 

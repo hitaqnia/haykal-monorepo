@@ -7,9 +7,9 @@ namespace HiTaqnia\Haykal\Tests\Api;
 use Dedoc\Scramble\ScrambleServiceProvider;
 use HiTaqnia\Haykal\Api\HaykalApiServiceProvider;
 use HiTaqnia\Haykal\Core\HaykalCoreServiceProvider;
-use HiTaqnia\Haykal\Core\Identity\Models\Permission;
-use HiTaqnia\Haykal\Core\Identity\Models\Role;
 use HiTaqnia\Haykal\Tests\Fixtures\TestHuwiyaUser;
+use HiTaqnia\Haykal\Tests\Fixtures\TestPermission;
+use HiTaqnia\Haykal\Tests\Fixtures\TestRole;
 use Huwiya\Facades\Huwiya;
 use Huwiya\HuwiyaServiceProvider;
 use Illuminate\Contracts\Auth\Authenticatable;
@@ -51,8 +51,8 @@ abstract class ApiTestCase extends TestCase
 
         $app['config']->set('permission.teams', true);
         $app['config']->set('permission.testing', true);
-        $app['config']->set('permission.models.role', Role::class);
-        $app['config']->set('permission.models.permission', Permission::class);
+        $app['config']->set('permission.models.role', TestRole::class);
+        $app['config']->set('permission.models.permission', TestPermission::class);
 
         $app['config']->set('huwiya.url', 'https://huwiya.test');
         $app['config']->set('huwiya.project_id', 'test-project');
@@ -74,7 +74,7 @@ abstract class ApiTestCase extends TestCase
 
     protected function defineDatabaseMigrations(): void
     {
-        // haykal-core loads its migrations from the package; no extra action.
+        $this->loadMigrationsFrom(__DIR__.'/../Fixtures/migrations');
     }
 
     // -------------------------------------------------------------

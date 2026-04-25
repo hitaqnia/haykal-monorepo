@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace HiTaqnia\Haykal\Tests\Core;
 
 use HiTaqnia\Haykal\Core\HaykalCoreServiceProvider;
-use HiTaqnia\Haykal\Core\Identity\Models\Permission;
-use HiTaqnia\Haykal\Core\Identity\Models\Role;
 use HiTaqnia\Haykal\Tests\Fixtures\TestHuwiyaUser;
+use HiTaqnia\Haykal\Tests\Fixtures\TestPermission;
+use HiTaqnia\Haykal\Tests\Fixtures\TestRole;
 use Huwiya\HuwiyaServiceProvider;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Orchestra\Testbench\TestCase;
@@ -17,9 +17,11 @@ use Spatie\Permission\PermissionServiceProvider;
 /**
  * Shared Testbench base for haykal-core feature tests.
  *
- * Sets up a Laravel app with haykal-core and its ecosystem dependencies
- * wired in, a sqlite in-memory database, and Huwiya pointed at a
- * well-known test issuer so fake JWTs from `FakeHuwiyaIdP` validate.
+ * haykal-core is a utility-only package — it ships no migrations or
+ * models. The test base recreates a realistic schema by running the
+ * reference migrations stored under `tests/Fixtures/migrations/`, wires
+ * Spatie to the local Role/Permission fixtures, and points the default
+ * auth provider at the fixture User.
  */
 abstract class CoreTestCase extends TestCase
 {
@@ -45,8 +47,8 @@ abstract class CoreTestCase extends TestCase
         // Spatie permission: enable teams + testing fix for sqlite.
         $app['config']->set('permission.teams', true);
         $app['config']->set('permission.testing', true);
-        $app['config']->set('permission.models.role', Role::class);
-        $app['config']->set('permission.models.permission', Permission::class);
+        $app['config']->set('permission.models.role', TestRole::class);
+        $app['config']->set('permission.models.permission', TestPermission::class);
 
         // Huwiya: point at the fake issuer the tests control.
         $app['config']->set('huwiya.url', 'https://huwiya.test');
@@ -54,8 +56,7 @@ abstract class CoreTestCase extends TestCase
         $app['config']->set('huwiya.validate_issuer', true);
         $app['config']->set('huwiya.validate_audience', true);
 
-        // Auth: use the test fixture User as the default provider model.
-        // Real apps point this at their own subclass of BaseHuwiyaUser.
+        // Auth: use the fixture User as the default provider model.
         $app['config']->set('auth.providers.users.model', TestHuwiyaUser::class);
 
         // Prevent Laravel from guessing factory names — fixtures declare
@@ -65,8 +66,6 @@ abstract class CoreTestCase extends TestCase
 
     protected function defineDatabaseMigrations(): void
     {
-        // haykal-core ships its own users migration — don't layer Laravel's
-        // default on top. Migrations are picked up via loadMigrationsFrom
-        // in the service provider.
+        $this->loadMigrationsFrom(__DIR__.'/../Fixtures/migrations');
     }
 }

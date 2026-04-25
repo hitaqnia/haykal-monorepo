@@ -11,9 +11,11 @@
         "hitaqnia/haykal": "^1.0"
     },
     "require-dev": {
+        "hitaqnia/huwiya-laravel": "^1.0",
         "laravel/pint": "^1.23",
         "orchestra/testbench": "^11.0",
-        "phpunit/phpunit": "^12.0"
+        "phpunit/phpunit": "^12.0",
+        "spatie/laravel-medialibrary": "^11.15"
     },
     "autoload-dev": {
         "psr-4": {

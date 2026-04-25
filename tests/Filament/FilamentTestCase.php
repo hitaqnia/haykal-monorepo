@@ -14,10 +14,10 @@ use Filament\Support\SupportServiceProvider;
 use Filament\Tables\TablesServiceProvider;
 use Filament\Widgets\WidgetsServiceProvider;
 use HiTaqnia\Haykal\Core\HaykalCoreServiceProvider;
-use HiTaqnia\Haykal\Core\Identity\Models\Permission;
-use HiTaqnia\Haykal\Core\Identity\Models\Role;
 use HiTaqnia\Haykal\Filament\HaykalFilamentServiceProvider;
 use HiTaqnia\Haykal\Tests\Fixtures\TestHuwiyaUser;
+use HiTaqnia\Haykal\Tests\Fixtures\TestPermission;
+use HiTaqnia\Haykal\Tests\Fixtures\TestRole;
 use Huwiya\HuwiyaServiceProvider;
 use LaraZeus\SpatieTranslatable\SpatieTranslatableServiceProvider;
 use Livewire\LivewireServiceProvider;
@@ -63,8 +63,8 @@ abstract class FilamentTestCase extends TestCase
 
         $app['config']->set('permission.teams', true);
         $app['config']->set('permission.testing', true);
-        $app['config']->set('permission.models.role', Role::class);
-        $app['config']->set('permission.models.permission', Permission::class);
+        $app['config']->set('permission.models.role', TestRole::class);
+        $app['config']->set('permission.models.permission', TestPermission::class);
 
         $app['config']->set('huwiya.url', 'https://huwiya.test');
         $app['config']->set('huwiya.project_id', 'test-project');
@@ -80,6 +80,6 @@ abstract class FilamentTestCase extends TestCase
 
     protected function defineDatabaseMigrations(): void
     {
-        // haykal-core auto-loads its migrations.
+        $this->loadMigrationsFrom(__DIR__.'/../Fixtures/migrations');
     }
 }
