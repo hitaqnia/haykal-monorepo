@@ -19,7 +19,7 @@ Applications that only expose an API (headless services, microservices without a
 ## Installation
 
 ```bash
-composer require hitaqnia/haykal:@dev
+composer require hitaqnia/haykal
 ```
 
 After installation, follow each sub-package's own configuration guide — the metapackage does not add configuration of its own:
@@ -41,4 +41,4 @@ After installation, follow each sub-package's own configuration guide — the me
 
 ## Versioning
 
-The metapackage tracks the Haykal suite's major version and pins its dependencies to the matching minor range so `composer require hitaqnia/haykal:^1.0` resolves consistent versions of the underlying packages. Pin to a concrete version when a stable major lands; while the suite is in `@dev`, every release bumps together.
+The metapackage tracks the Haykal suite's major version and pins its dependencies to the matching minor range so `composer require hitaqnia/haykal:^1.0` resolves consistent versions of the underlying packages. Pin to a concrete version when you need to lock a release; otherwise `composer require hitaqnia/haykal` always resolves the latest stable.

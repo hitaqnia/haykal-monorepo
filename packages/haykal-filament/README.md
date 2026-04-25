@@ -103,7 +103,7 @@ Filament foundation for HiTaqnia Laravel applications.
 With `hitaqnia/haykal-core` already wired (see its README), require this package alongside:
 
 ```bash
-composer require hitaqnia/haykal-filament:@dev
+composer require hitaqnia/haykal-filament
 ```
 
 Install the Phosphor icon library (or Tabler) so the icon overrides resolve at runtime:
