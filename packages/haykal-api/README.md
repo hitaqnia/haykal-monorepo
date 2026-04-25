@@ -30,6 +30,7 @@ Controllers, Form Requests, and Resources are written per-project. Laravel alrea
     - [Paginated responses](#paginated-responses)
     - [Error responses](#error-responses)
     - [Business errors](#business-errors)
+    - [Locale from request header](#locale-from-request-header)
 - [Conventions](#conventions)
     - [Controller docblocks](#controller-docblocks)
     - [Controllers](#controllers)
@@ -75,6 +76,12 @@ Controllers, Form Requests, and Resources are written per-project. Laravel alrea
 | Class | Purpose |
 |---|---|
 | `HiTaqnia\Haykal\Api\ApiProvider` | Abstract base service provider for API modules. Registers the module with Scramble, installs the Huwiya bearer security scheme, and exposes the docs UI. Subclass this for every API you ship. |
+
+### Middleware
+
+| Class | Purpose |
+|---|---|
+| `HiTaqnia\Haykal\Api\Http\Middlewares\SetLocaleFromHeaderMiddleware` | Sets `app()->setLocale()` from an inbound request header (`Accept-Language` by default). Not registered globally — slot it into the route groups that should respect the header. |
 
 No concrete providers, controllers, resources, or routes are shipped. Those belong in the consuming application.
 
@@ -328,6 +335,24 @@ return ApiResponse::businessError(
     Error::make(code: 4001, message: 'Booking overlaps an existing reservation.'),
 );
 ```
+
+### Locale from request header
+
+Apply `SetLocaleFromHeaderMiddleware` to the route groups that should honor the client's locale. Reads `Accept-Language` by default; pass an allow-list to reject unsupported values, or a custom header name when `Accept-Language` is reserved for content negotiation.
+
+```php
+use HiTaqnia\Haykal\Api\Http\Middlewares\SetLocaleFromHeaderMiddleware;
+
+// bootstrap/app.php
+$middleware->appendToGroup('api', [
+    new SetLocaleFromHeaderMiddleware(supported: ['en', 'ar']),
+]);
+
+// or a custom header:
+new SetLocaleFromHeaderMiddleware(supported: ['en', 'ar'], header: 'X-Locale');
+```
+
+The middleware is not registered globally and ships no alias — instantiate it where you need it.
 
 ---
 
