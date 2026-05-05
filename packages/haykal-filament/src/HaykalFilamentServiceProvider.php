@@ -8,9 +8,7 @@ use Filament\Support\Assets\AlpineComponent;
 use Filament\Support\Assets\Css;
 use Filament\Support\Facades\FilamentAsset;
 use HiTaqnia\Haykal\Filament\Console\PublishThemeCommand;
-use HiTaqnia\Haykal\Filament\Http\Middlewares\AccessCheckingMiddleware;
 use HiTaqnia\Haykal\Filament\Http\Middlewares\FilamentTenancyMiddleware;
-use HiTaqnia\Haykal\Filament\Http\Middlewares\SetPanelLocale;
 use Illuminate\Routing\Router;
 use Illuminate\Support\ServiceProvider;
 
@@ -33,6 +31,7 @@ final class HaykalFilamentServiceProvider extends ServiceProvider
     {
         $this->registerMiddlewareAliases();
         $this->registerViews();
+        $this->registerTranslations();
         $this->registerFilamentAssets();
         $this->registerPublishables();
         $this->registerCommands();
@@ -46,8 +45,6 @@ final class HaykalFilamentServiceProvider extends ServiceProvider
         /** @var Router $router */
         $router = $this->app->make(Router::class);
 
-        $router->aliasMiddleware('haykal.filament.access', AccessCheckingMiddleware::class);
-        $router->aliasMiddleware('haykal.filament.locale', SetPanelLocale::class);
         $router->aliasMiddleware('haykal.filament.tenancy', FilamentTenancyMiddleware::class);
     }
 
@@ -61,9 +58,18 @@ final class HaykalFilamentServiceProvider extends ServiceProvider
     }
 
     /**
-     * Register the Mapbox and ViewerJS Alpine components + CSS assets with
-     * Filament's asset manager. Components are loaded on request (lazy), so
-     * pages that do not reference Mapbox or ViewerJS pay no cost.
+     * Load package translations under the `haykal-filament::` namespace
+     * so callers can resolve keys such as `haykal-filament::copyable.tooltip`.
+     */
+    private function registerTranslations(): void
+    {
+        $this->loadTranslationsFrom(__DIR__.'/../lang', 'haykal-filament');
+    }
+
+    /**
+     * Register the Mapbox Alpine components + CSS assets with Filament's
+     * asset manager. Components are loaded on request (lazy), so pages
+     * that do not reference Mapbox pay no cost.
      */
     private function registerFilamentAssets(): void
     {
@@ -77,10 +83,6 @@ final class HaykalFilamentServiceProvider extends ServiceProvider
             AlpineComponent::make('mapbox-location-viewer', __DIR__.'/../resources/js/mapbox/dist/mapbox-location-viewer.js'),
             AlpineComponent::make('mapbox-polygons-drawer', __DIR__.'/../resources/js/mapbox/dist/mapbox-polygons-drawer.js'),
             AlpineComponent::make('mapbox-polygons-viewer', __DIR__.'/../resources/js/mapbox/dist/mapbox-polygons-viewer.js'),
-
-            // ViewerJS runtime CSS + image-gallery Alpine component.
-            Css::make('viewerjs', 'https://cdnjs.cloudflare.com/ajax/libs/viewerjs/1.11.7/viewer.min.css')->loadedOnRequest(),
-            AlpineComponent::make('image-gallery', __DIR__.'/../resources/js/viewer-js/dist/image-gallery.js'),
         ]);
     }
 
@@ -101,6 +103,10 @@ final class HaykalFilamentServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/../stubs/panel-theme.css.stub' => resource_path('stubs/haykal/panel-theme.css.stub'),
         ], 'haykal-filament-stubs');
+
+        $this->publishes([
+            __DIR__.'/../lang' => lang_path('vendor/haykal-filament'),
+        ], 'haykal-filament-translations');
     }
 
     private function registerCommands(): void

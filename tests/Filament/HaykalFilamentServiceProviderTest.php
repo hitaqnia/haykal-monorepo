@@ -16,8 +16,6 @@ final class HaykalFilamentServiceProviderTest extends FilamentTestCase
 
         $aliases = $router->getMiddleware();
 
-        $this->assertArrayHasKey('haykal.filament.access', $aliases);
-        $this->assertArrayHasKey('haykal.filament.locale', $aliases);
         $this->assertArrayHasKey('haykal.filament.tenancy', $aliases);
     }
 

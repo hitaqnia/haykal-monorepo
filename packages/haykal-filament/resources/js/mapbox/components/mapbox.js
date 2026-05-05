@@ -1,5 +1,31 @@
 import mapboxgl from 'mapbox-gl';
 
+// Mapbox's setRTLTextPlugin must be called exactly once per page.
+// Calling it again throws ("setRTLTextPlugin cannot be called multiple
+// times"). The flag below makes registration idempotent across all four
+// Mapbox components.
+//
+// `lazy: true` defers the actual plugin fetch until a tile contains
+// RTL glyphs, so non-Arabic/Hebrew/Persian maps pay no cost.
+//
+// https://docs.mapbox.com/mapbox-gl-js/example/mapbox-gl-rtl-text/
+const RTL_TEXT_PLUGIN_URL =
+    'https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-rtl-text/v0.2.3/mapbox-gl-rtl-text.js';
+
+let rtlTextPluginRegistered = false;
+
+function registerRtlTextPlugin() {
+    if (rtlTextPluginRegistered) return;
+    if (typeof mapboxgl.getRTLTextPluginStatus === 'function'
+        && mapboxgl.getRTLTextPluginStatus() !== 'unavailable') {
+        rtlTextPluginRegistered = true;
+        return;
+    }
+
+    mapboxgl.setRTLTextPlugin(RTL_TEXT_PLUGIN_URL, null, true);
+    rtlTextPluginRegistered = true;
+}
+
 export const defaultMapboxConfig = {
     token: null,
     map: {
@@ -36,6 +62,8 @@ export function initMapbox(config) {
     if (!config?.map?.container) throw new Error('Map container is required');
 
     mapboxgl.accessToken = config.token;
+
+    registerRtlTextPlugin();
 
     const map = new mapboxgl.Map({
         container: config.map.container,

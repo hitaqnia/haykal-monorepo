@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace HiTaqnia\Haykal\Tests\Filament;
 
+use BladeUI\Icons\BladeIconsServiceProvider;
+use Codeat3\BladePhosphorIcons\BladePhosphorIconsServiceProvider;
 use Filament\Actions\ActionsServiceProvider;
 use Filament\FilamentServiceProvider;
 use Filament\Forms\FormsServiceProvider;
@@ -24,6 +26,7 @@ use Livewire\LivewireServiceProvider;
 use Orchestra\Testbench\TestCase;
 use Spatie\MediaLibrary\MediaLibraryServiceProvider;
 use Spatie\Permission\PermissionServiceProvider;
+use ToneGabes\Filament\Icons\PhosphorIconsServiceProvider;
 
 /**
  * Shared Testbench base for haykal-filament feature tests.
@@ -37,6 +40,9 @@ abstract class FilamentTestCase extends TestCase
             PermissionServiceProvider::class,
             MediaLibraryServiceProvider::class,
             LivewireServiceProvider::class,
+            BladeIconsServiceProvider::class,
+            BladePhosphorIconsServiceProvider::class,
+            PhosphorIconsServiceProvider::class,
             SupportServiceProvider::class,
             ActionsServiceProvider::class,
             SchemasServiceProvider::class,

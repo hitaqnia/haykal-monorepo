@@ -6,6 +6,7 @@ namespace HiTaqnia\Haykal\Filament;
 
 use Filament\Contracts\Plugin;
 use Filament\Enums\ThemeMode;
+use Filament\FontProviders\BunnyFontProvider;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -16,10 +17,8 @@ use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Enums\Width;
 use HiTaqnia\Haykal\Core\Http\Middlewares\PermissionsTeamMiddleware;
-use HiTaqnia\Haykal\Filament\Auth\HuwiyaRedirectLogin;
-use HiTaqnia\Haykal\Filament\Http\Middlewares\AccessCheckingMiddleware;
+use HiTaqnia\Haykal\Filament\Auth\HuwiyaConsentLogin;
 use HiTaqnia\Haykal\Filament\Http\Middlewares\FilamentTenancyMiddleware;
-use HiTaqnia\Haykal\Filament\Http\Middlewares\SetPanelLocale;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Database\Eloquent\Model;
@@ -99,7 +98,6 @@ abstract class BasePanel extends PanelProvider
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
-                SetPanelLocale::class,
             ])
             ->authMiddleware([
                 Authenticate::class,
@@ -110,7 +108,12 @@ abstract class BasePanel extends PanelProvider
             ->spa()
             ->maxContentWidth(Width::Full)
             ->globalSearch(false)
-            ->darkMode(false);
+            ->darkMode(false)
+            ->topbar(false)
+            ->font(
+                family: fn (): string => $this->fontFamilyForLocale(app()->getLocale()),
+                provider: BunnyFontProvider::class,
+            );
 
         $tenantModel = $this->tenantModel();
 
@@ -121,7 +124,6 @@ abstract class BasePanel extends PanelProvider
                 ->tenantMiddleware([
                     FilamentTenancyMiddleware::class,
                     PermissionsTeamMiddleware::class,
-                    AccessCheckingMiddleware::class,
                 ], isPersistent: true);
         }
 
@@ -136,7 +138,7 @@ abstract class BasePanel extends PanelProvider
      */
     protected function loginPage(): string
     {
-        return HuwiyaRedirectLogin::class;
+        return HuwiyaConsentLogin::class;
     }
 
     /**
@@ -172,6 +174,38 @@ abstract class BasePanel extends PanelProvider
                 ->defaultLocales(config('app.supported_locales', [config('app.locale')]))
                 ->persist(),
         ];
+    }
+
+    /**
+     * Locale → font family map applied through Filament's `Panel::font(...)`
+     * at render time. Override to swap fonts per locale or add new locales.
+     * Any locale not in the map falls back to the value of `'default'`.
+     *
+     * Resolved fonts are loaded from Bunny Fonts (the Google Fonts mirror
+     * Filament ships with) — override `fontProvider()` if a panel needs
+     * to load fonts from a self-hosted file or a different CDN.
+     *
+     * @return array<string, string>
+     */
+    protected function fontFamiliesByLocale(): array
+    {
+        return [
+            'default' => 'Outfit',
+            'en' => 'Outfit',
+            'ar' => 'Tajawal',
+            'ku' => 'Noto Sans Arabic',
+        ];
+    }
+
+    /**
+     * Resolve the font family for a given locale, falling back to the
+     * `'default'` key when the locale has no explicit entry.
+     */
+    protected function fontFamilyForLocale(string $locale): string
+    {
+        $map = $this->fontFamiliesByLocale();
+
+        return $map[$locale] ?? $map['default'] ?? 'Outfit';
     }
 
     /**

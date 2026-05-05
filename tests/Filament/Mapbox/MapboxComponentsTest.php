@@ -78,4 +78,53 @@ final class MapboxComponentsTest extends FilamentTestCase
         $this->assertFileExists($dist.'/mapbox-polygons-drawer.js');
         $this->assertFileExists($dist.'/mapbox-polygons-viewer.js');
     }
+
+    public function test_every_dist_bundle_registers_the_rtl_text_plugin(): void
+    {
+        // Each bundle ships its own copy of mapbox-gl, so each one must
+        // register Mapbox's RTL text plugin (Arabic, Hebrew, Persian
+        // labels render as gibberish without it). The plugin URL is
+        // pinned by the source `mapbox.js` and lazy-loaded by Mapbox
+        // — pages that never render RTL glyphs pay no fetch cost.
+        $dist = __DIR__.'/../../../packages/haykal-filament/resources/js/mapbox/dist';
+        $bundles = [
+            'mapbox-location-picker.js',
+            'mapbox-location-viewer.js',
+            'mapbox-polygons-drawer.js',
+            'mapbox-polygons-viewer.js',
+        ];
+
+        foreach ($bundles as $bundle) {
+            $contents = (string) file_get_contents("{$dist}/{$bundle}");
+
+            $this->assertStringContainsString(
+                'mapbox-gl-rtl-text/v0.2.3/mapbox-gl-rtl-text.js',
+                $contents,
+                "{$bundle} must embed the pinned RTL text plugin URL.",
+            );
+            $this->assertStringContainsString(
+                'setRTLTextPlugin',
+                $contents,
+                "{$bundle} must call mapboxgl.setRTLTextPlugin to enable RTL glyphs.",
+            );
+        }
+    }
+
+    public function test_source_module_registers_rtl_plugin_idempotently(): void
+    {
+        // Mapbox throws if `setRTLTextPlugin` is invoked twice. Our
+        // shared `mapbox.js` guards the call behind a module-level flag;
+        // this test pins that the flag (and the official lazy-load
+        // signature) survive future refactors of the source file.
+        $source = (string) file_get_contents(
+            __DIR__.'/../../../packages/haykal-filament/resources/js/mapbox/components/mapbox.js',
+        );
+
+        $this->assertStringContainsString('rtlTextPluginRegistered', $source);
+        $this->assertStringContainsString(
+            "mapboxgl.setRTLTextPlugin(RTL_TEXT_PLUGIN_URL, null, true)",
+            $source,
+            'Plugin must be registered with lazy-loading (`true` as the third arg).',
+        );
+    }
 }

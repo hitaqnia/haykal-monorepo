@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace HiTaqnia\Haykal\Filament\Mapbox\Concerns;
 
+use Closure;
+
 /**
  * Fluent configuration for every Haykal Mapbox component.
  *
@@ -13,6 +15,13 @@ namespace HiTaqnia\Haykal\Filament\Mapbox\Concerns;
  * `MapboxPolygonsDrawer`, `MapboxPolygonsViewer`) share identical
  * fluent API. `getMapboxConfig()` and `getMapboxJsonConfig()` assemble
  * the payload passed to the Alpine component as initial config.
+ *
+ * `mapHeight`, `mapCenter`, `mapZoom`, and `navigationControl` accept
+ * either a static value or a Filament-style closure. Closures receive
+ * the same named/typed injections as any other Filament component
+ * closure (`$state`, `$record`, `$get`, `$livewire`, etc.) and are
+ * resolved on every render — so a map's center can react to another
+ * field via `live()` + `->mapCenter(fn (Get $get) => ...)`.
  */
 trait InteractsWithMapbox
 {
@@ -23,8 +32,10 @@ trait InteractsWithMapbox
 
     /**
      * The height of the map container in pixels.
+     *
+     * @var int|Closure
      */
-    protected int $mapHeight = 400;
+    protected $mapHeight = 400;
 
     /**
      * Default map style.
@@ -35,19 +46,23 @@ trait InteractsWithMapbox
      * The initial map center coordinates. Only applied on first render,
      * when the component has no saved state to fit to.
      *
-     * @var array{0: float|int, 1: float|int}
+     * @var array{0: float|int, 1: float|int}|Closure
      */
-    protected array $mapCenter = [-74.5, 40];
+    protected $mapCenter = [-74.5, 40];
 
     /**
      * Default map zoom level.
+     *
+     * @var int|Closure
      */
-    protected int $mapZoom = 9;
+    protected $mapZoom = 9;
 
     /**
      * Whether to show the navigation controls (zoom and rotation).
+     *
+     * @var bool|Closure
      */
-    protected bool $navigationControl = false;
+    protected $navigationControl = false;
 
     public function mapContainer(string $id): static
     {
@@ -61,7 +76,10 @@ trait InteractsWithMapbox
         return $this->mapContainer ?? $this->getName();
     }
 
-    public function mapHeight(int $height): static
+    /**
+     * @param  int|Closure  $height
+     */
+    public function mapHeight($height): static
     {
         $this->mapHeight = $height;
 
@@ -70,7 +88,7 @@ trait InteractsWithMapbox
 
     public function getMapHeight(): int
     {
-        return $this->mapHeight;
+        return (int) $this->evaluate($this->mapHeight);
     }
 
     public function mapStyle(string $style): static
@@ -86,9 +104,9 @@ trait InteractsWithMapbox
     }
 
     /**
-     * @param  array{0: float|int, 1: float|int}  $center
+     * @param  array{0: float|int, 1: float|int}|Closure  $center
      */
-    public function mapCenter(array $center): static
+    public function mapCenter($center): static
     {
         $this->mapCenter = $center;
 
@@ -100,10 +118,13 @@ trait InteractsWithMapbox
      */
     public function getMapCenter(): array
     {
-        return $this->mapCenter;
+        return $this->evaluate($this->mapCenter);
     }
 
-    public function mapZoom(int $zoom): static
+    /**
+     * @param  int|Closure  $zoom
+     */
+    public function mapZoom($zoom): static
     {
         $this->mapZoom = $zoom;
 
@@ -112,10 +133,13 @@ trait InteractsWithMapbox
 
     public function getMapZoom(): int
     {
-        return $this->mapZoom;
+        return (int) $this->evaluate($this->mapZoom);
     }
 
-    public function navigationControl(bool $control = true): static
+    /**
+     * @param  bool|Closure  $control
+     */
+    public function navigationControl($control = true): static
     {
         $this->navigationControl = $control;
 
@@ -124,7 +148,7 @@ trait InteractsWithMapbox
 
     public function hasNavigationControl(): bool
     {
-        return $this->navigationControl;
+        return (bool) $this->evaluate($this->navigationControl);
     }
 
     /**
