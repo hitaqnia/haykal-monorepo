@@ -8,108 +8,48 @@
  *   1. @import Filament's default theme.
  *   2. @import this file from the package vendor directory.
  *   3. Declare their own @source directives (the panel's PHP/blade paths).
- *   4. Optionally override any of the tokens below in a @theme block
- *      after the import to re-skin the panel without rewriting rules.
+ *   4. Optionally add panel-specific overrides below the import.
  *
  * Inspired by polished SaaS dashboards: dark near-black sidebar with
  * orange accents, light airy content area, flat surfaces (no shadows
  * except on overlays), rounded corners, and gentle motion.
+ *
+ * Color tokens are exposed as CSS custom properties so panels can
+ * override them locally without redefining the rules below.
  * ==================================================================== */
 
 @theme {
-    /* ----------------------------------------------------------------
-     * Accent
-     * ----------------------------------------------------------------
-     * The primary brand color comes from Filament's primary palette
-     * (--color-primary-*). --filament-primary-rgb mirrors --color-primary-500
-     * as space-separated RGB channels so we can build translucent values
-     * with rgb(var(--filament-primary-rgb) / <alpha>) — selection highlight,
-     * focus rings, active tab background, sidebar dot glow, etc.
-     *
-     * Override this together with the Filament palette when re-skinning.
+    /* Surface tokens — kept neutral, never colorful. */
+    --filament-shell: #0e0f12;
+    --filament-shell-soft: #17191e;
+    --filament-shell-elevated: #1c1e24;
+    --filament-shell-line: #23262d;
+    --filament-shell-line-strong: #2a2d35;
+    --filament-shell-text: #f3f4f6;
+    --filament-shell-muted: #9ca3af;
+    --filament-shell-dim: #6b7280;
+
+    --filament-canvas: #ffffff;
+    --filament-surface: #ffffff;
+    --filament-surface-soft: #fafbfc;
+    --filament-line: #eef0f3;
+    --filament-line-strong: #e2e6ec;
+
+    --filament-ink: #0f1620;
+    --filament-ink-soft: #4a5568;
+    --filament-ink-muted: #8a96a8;
+
+    --filament-radius-sm: 0.625rem;
+    --filament-radius: 0.875rem;
+    --filament-radius-lg: 1.125rem;
+
+    /* Flat design: no ambient shadows. Only floating layers (modals,
+     * dropdowns, notifications) get a single soft elevation.
      */
-    --filament-primary-rgb: 243 107 29;
+    --filament-shadow-none: 0 0 #0000;
+    --filament-shadow-overlay: 0 8px 28px -6px rgb(15 22 32 / 0.10), 0 0 0 1px rgb(15 22 32 / 0.04);
 
-    /* ----------------------------------------------------------------
-     * Shell — the dark sidebar / app frame
-     * ----------------------------------------------------------------
-     * "Shell" tokens describe the dark surface on the left edge: the
-     * sidebar background, its borders, and the text colors that sit on
-     * top of it.
-     */
-    --filament-shell:               #0e0f12;  /* sidebar background */
-    --filament-shell-soft:          #17191e;  /* slightly lighter shell tone (reserved) */
-    --filament-shell-elevated:      #1c1e24;  /* active sidebar item card background */
-    --filament-shell-line:          #23262d;  /* hairline borders on the shell */
-    --filament-shell-line-strong:   #2a2d35;  /* stronger border (active item) */
-    --filament-shell-text:          #f3f4f6;  /* primary text on the shell */
-    --filament-shell-muted:         #9ca3af;  /* secondary text / inactive icons */
-    --filament-shell-dim:           #6b7280;  /* tertiary text (group labels, chevrons) */
-    --filament-shell-on-active:     #ffffff;  /* text & icon color on the active item / logo */
-
-    /* Hover and active overlays painted on top of the shell.
-     * Expressed as final colors (not alpha values) so panels can swap
-     * them for a different scheme without recomputing alpha math. */
-    --filament-shell-hover-bg:      rgb(255 255 255 / 0.025);
-    --filament-shell-active-bg:     rgb(255 255 255 / 0.04);   /* user-menu / icon-btn hover */
-    --filament-shell-badge-bg:      rgb(255 255 255 / 0.06);   /* sidebar counters */
-
-    /* Inset shadow stack used by the active sidebar item to give it a
-     * subtle "pressed card" feel against the shell. */
-    --filament-shell-active-shadow:
-        0 1px 0 0 rgb(0 0 0 / 0.2),
-        inset 0 1px 0 0 rgb(255 255 255 / 0.02);
-
-    /* ----------------------------------------------------------------
-     * Canvas — the light content area
-     * ----------------------------------------------------------------
-     * "Canvas" / "surface" tokens describe everything to the right of
-     * the sidebar: the page background, cards, table chrome, dividers,
-     * and the text colors on top of them.
-     */
-    --filament-canvas:              #ffffff;  /* page background */
-    --filament-surface:             #ffffff;  /* card / section / table body */
-    --filament-surface-soft:        #fafbfc;  /* subtle alt surface (table head, hover row) */
-    --filament-line:                #eef0f3;  /* default hairline divider */
-    --filament-line-strong:         #e2e6ec;  /* stronger border (inputs, gray buttons) */
-
-    --filament-ink:                 #0f1620;  /* primary text on canvas */
-    --filament-ink-soft:            #4a5568;  /* body text, table cells */
-    --filament-ink-muted:           #8a96a8;  /* secondary text, placeholders, hints */
-
-    /* Border color of an input on hover (between idle and focused). */
-    --filament-input-border-hover:  #c8ced7;
-
-    /* ----------------------------------------------------------------
-     * Status colors
-     * ---------------------------------------------------------------- */
-    --filament-danger:              rgb(220 38 38);
-    --filament-danger-strong:       rgb(185 28 28);  /* hover / active state */
-
-    /* ----------------------------------------------------------------
-     * Radius scale
-     * ---------------------------------------------------------------- */
-    --filament-radius-sm:           0.625rem;  /* buttons, inputs, pills */
-    --filament-radius:              0.875rem;  /* cards, sections, tables */
-    --filament-radius-lg:           1.125rem;  /* large surfaces (reserved) */
-
-    /* ----------------------------------------------------------------
-     * Elevation
-     * ----------------------------------------------------------------
-     * Flat design: no ambient shadows on resting surfaces. Only floating
-     * layers (modals, dropdowns, notifications) get a single soft lift.
-     */
-    --filament-shadow-none:         0 0 #0000;
-    --filament-shadow-overlay:      0 8px 28px -6px rgb(15 22 32 / 0.10),
-                                 0 0 0 1px rgb(15 22 32 / 0.04);
-
-    /* Focus ring — translucent halo around inputs / buttons on focus. */
-    --filament-focus-ring:          0 0 0 3px rgb(var(--filament-primary-rgb) / 0.18);
-
-    /* ----------------------------------------------------------------
-     * Motion
-     * ---------------------------------------------------------------- */
-    --filament-ease:                cubic-bezier(0.32, 0.72, 0.32, 1);
+    --filament-ease: cubic-bezier(0.32, 0.72, 0.32, 1);
 }
 
 /* --------------------------------------------------------------------
@@ -125,7 +65,7 @@ body {
 }
 
 ::selection {
-    background-color: rgb(var(--filament-primary-rgb) / 0.18);
+    background-color: rgb(243 107 29 / 0.18);
     color: var(--filament-ink);
 }
 
@@ -484,14 +424,16 @@ body {
 }
 
 .fi-sidebar .fi-sidebar-item-btn:hover {
-    background-color: var(--filament-shell-hover-bg) !important;
+    background-color: rgb(255 255 255 / 0.025) !important;
     color: var(--filament-shell-text) !important;
 }
 
 .fi-sidebar .fi-active > .fi-sidebar-item-btn {
     background-color: var(--filament-shell-elevated) !important;
     border-color: var(--filament-shell-line-strong) !important;
-    box-shadow: var(--filament-shell-active-shadow) !important;
+    box-shadow:
+        0 1px 0 0 rgb(0 0 0 / 0.2),
+        inset 0 1px 0 0 rgb(255 255 255 / 0.02) !important;
 }
 
 /* Tiny orange dot on the leading edge of the active item */
@@ -505,7 +447,7 @@ body {
     height: 1.125rem;
     border-radius: 0 2px 2px 0;
     background-color: var(--color-primary-500);
-    box-shadow: 0 0 8px 0 rgb(var(--filament-primary-rgb) / 0.45);
+    box-shadow: 0 0 8px 0 rgb(243 107 29 / 0.45);
 }
 
 [dir="rtl"] .fi-sidebar .fi-active > .fi-sidebar-item-btn::before {
@@ -524,7 +466,7 @@ body {
 }
 
 .fi-sidebar .fi-active > .fi-sidebar-item-btn .fi-sidebar-item-icon {
-    color: var(--filament-shell-on-active) !important;
+    color: #ffffff !important;
 }
 
 /* Labels — muted by default, white when active */
@@ -536,7 +478,7 @@ body {
 }
 
 .fi-sidebar .fi-active > .fi-sidebar-item-btn .fi-sidebar-item-label {
-    color: var(--filament-shell-on-active) !important;
+    color: #ffffff !important;
     font-weight: 500 !important;
 }
 
@@ -548,7 +490,7 @@ body {
 /* Sidebar badges (counters) — pill, subtle, never colored */
 .fi-sidebar .fi-sidebar-item-badge,
 .fi-sidebar .fi-sidebar-item-btn .fi-badge {
-    background-color: var(--filament-shell-badge-bg) !important;
+    background-color: rgb(255 255 255 / 0.06) !important;
     color: var(--filament-shell-text) !important;
     border: 0 !important;
     box-shadow: none !important;
@@ -581,7 +523,7 @@ body {
 }
 
 .fi-logo {
-    color: var(--filament-shell-on-active) !important;
+    color: #ffffff !important;
     font-weight: 600 !important;
     font-size: 1.0625rem !important;
     letter-spacing: -0.015em !important;
@@ -599,7 +541,7 @@ body {
 .fi-sidebar-close-overlay-btn:hover,
 .fi-sidebar-collapse-btn:hover {
     color: var(--filament-shell-text) !important;
-    background-color: var(--filament-shell-active-bg) !important;
+    background-color: rgb(255 255 255 / 0.04) !important;
 }
 
 .fi-topbar-open-sidebar-btn {
@@ -637,7 +579,7 @@ body {
 }
 
 .fi-sidebar-footer .fi-user-menu-trigger:hover {
-    background-color: var(--filament-shell-active-bg) !important;
+    background-color: rgb(255 255 255 / 0.04) !important;
 }
 
 .fi-sidebar-footer .fi-user-menu-trigger .fi-avatar,
@@ -716,7 +658,7 @@ body {
 }
 
 .fi-btn:focus-visible {
-    box-shadow: var(--filament-focus-ring) !important;
+    box-shadow: 0 0 0 3px rgb(243 107 29 / 0.18) !important;
     outline: none !important;
 }
 
@@ -755,15 +697,15 @@ body {
 }
 
 .fi-btn.fi-color-danger {
-    background-color: var(--filament-danger) !important;
+    background-color: rgb(220 38 38) !important;
     background-image: none !important;
     color: #ffffff !important;
-    border-color: var(--filament-danger) !important;
+    border-color: rgb(220 38 38) !important;
 }
 
 .fi-btn.fi-color-danger:hover {
-    background-color: var(--filament-danger-strong) !important;
-    border-color: var(--filament-danger-strong) !important;
+    background-color: rgb(185 28 28) !important;
+    border-color: rgb(185 28 28) !important;
 }
 
 .fi-btn.fi-size-sm {
@@ -1024,12 +966,12 @@ body {
 }
 
 .fi-input-wrp:hover {
-    border-color: var(--filament-input-border-hover) !important;
+    border-color: #c8ced7 !important;
 }
 
 .fi-input-wrp:focus-within {
     border-color: var(--color-primary-500) !important;
-    box-shadow: 0 0 0 3px rgb(var(--filament-primary-rgb) / 0.12) !important;
+    box-shadow: 0 0 0 3px rgb(243 107 29 / 0.12) !important;
 }
 
 .fi-input,
@@ -1116,7 +1058,7 @@ body {
 }
 
 .fi-tabs-item.fi-active {
-    background-color: rgb(var(--filament-primary-rgb) / 0.08) !important;
+    background-color: rgb(243 107 29 / 0.08) !important;
     color: var(--color-primary-700) !important;
     font-weight: 600 !important;
 }

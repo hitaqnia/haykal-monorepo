@@ -22,8 +22,6 @@ final class BaseThemeTest extends FilamentTestCase
         $contents = (string) file_get_contents($this->themePath);
 
         $expectedTokens = [
-            // Accent
-            '--filament-primary-rgb',
             // Shell
             '--filament-shell',
             '--filament-shell-soft',
@@ -33,11 +31,6 @@ final class BaseThemeTest extends FilamentTestCase
             '--filament-shell-text',
             '--filament-shell-muted',
             '--filament-shell-dim',
-            '--filament-shell-on-active',
-            '--filament-shell-hover-bg',
-            '--filament-shell-active-bg',
-            '--filament-shell-badge-bg',
-            '--filament-shell-active-shadow',
             // Canvas
             '--filament-canvas',
             '--filament-surface',
@@ -47,10 +40,6 @@ final class BaseThemeTest extends FilamentTestCase
             '--filament-ink',
             '--filament-ink-soft',
             '--filament-ink-muted',
-            '--filament-input-border-hover',
-            // Status
-            '--filament-danger',
-            '--filament-danger-strong',
             // Radius
             '--filament-radius-sm',
             '--filament-radius',
@@ -58,7 +47,6 @@ final class BaseThemeTest extends FilamentTestCase
             // Elevation
             '--filament-shadow-none',
             '--filament-shadow-overlay',
-            '--filament-focus-ring',
             // Motion
             '--filament-ease',
         ];

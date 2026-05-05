@@ -432,12 +432,6 @@ After publishing, update each panel theme's `@import` to point at the local copy
 
 Every variable below is declared in the base theme's `@theme {}` block.
 
-#### Accent
-
-| Token | Default | Purpose |
-|---|---|---|
-| `--filament-primary-rgb` | `243 107 29` | Brand accent as space-separated RGB channels (mirrors `--color-primary-500`). Used to compose translucent values via `rgb(var(--filament-primary-rgb) / <alpha>)` for selection highlights, focus rings, the sidebar dot glow, and the active tab background. Override together with the Filament primary palette when re-skinning. |
-
 #### Shell — the dark sidebar / app frame
 
 The "shell" tokens describe the dark surface on the left edge: the sidebar background, its borders, and the text colors that sit on top of it.
@@ -452,11 +446,6 @@ The "shell" tokens describe the dark surface on the left edge: the sidebar backg
 | `--filament-shell-text` | `#f3f4f6` | Primary text color on the shell. |
 | `--filament-shell-muted` | `#9ca3af` | Secondary text / inactive icons. |
 | `--filament-shell-dim` | `#6b7280` | Tertiary text (group labels, chevrons). |
-| `--filament-shell-on-active` | `#ffffff` | Text and icon color on the active item / logo. |
-| `--filament-shell-hover-bg` | `rgb(255 255 255 / 0.025)` | Hover overlay painted on top of the shell. Final color (not alpha) so panels can swap schemes without recomputing math. |
-| `--filament-shell-active-bg` | `rgb(255 255 255 / 0.04)` | Active overlay for the user menu / icon-button hover. |
-| `--filament-shell-badge-bg` | `rgb(255 255 255 / 0.06)` | Background for sidebar counters (badges). |
-| `--filament-shell-active-shadow` | inset stack | Inset shadow applied to the active sidebar item to give it a subtle "pressed card" feel. |
 
 #### Canvas — the light content area
 
@@ -472,14 +461,6 @@ The "canvas"/"surface" tokens describe everything to the right of the sidebar: t
 | `--filament-ink` | `#0f1620` | Primary text color on canvas. |
 | `--filament-ink-soft` | `#4a5568` | Body text, table cells. |
 | `--filament-ink-muted` | `#8a96a8` | Secondary text, placeholders, hints. |
-| `--filament-input-border-hover` | `#c8ced7` | Border color of an input on hover (between idle and focused). |
-
-#### Status
-
-| Token | Default | Purpose |
-|---|---|---|
-| `--filament-danger` | `rgb(220 38 38)` | Default destructive action color. |
-| `--filament-danger-strong` | `rgb(185 28 28)` | Hover / active state for destructive actions. |
 
 #### Radius
 
@@ -497,7 +478,6 @@ The theme is intentionally flat — no ambient shadows on resting surfaces. Only
 |---|---|---|
 | `--filament-shadow-none` | `0 0 #0000` | Explicit zero shadow (use to neutralize Filament defaults). |
 | `--filament-shadow-overlay` | soft lift | Single shadow applied to floating layers (dropdowns, notifications). |
-| `--filament-focus-ring` | translucent halo | Focus ring placed around inputs / buttons on focus, derived from the brand accent. |
 
 #### Motion
 
