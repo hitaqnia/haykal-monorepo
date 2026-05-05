@@ -5,8 +5,8 @@
     "license": "proprietary",
     "require": {
         "php": "^8.3",
-        "hitaqnia/haykal-api": "^1.0",
-        "hitaqnia/haykal-filament": "^1.0"
+        "hitaqnia/haykal-api": "^2.0",
+        "hitaqnia/haykal-filament": "^2.0"
     },
     "minimum-stability": "stable",
     "prefer-stable": true
